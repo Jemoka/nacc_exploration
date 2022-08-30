@@ -2,6 +2,13 @@
 import pandas as pd
 # type: ignore
 from sklearn.tree import DecisionTreeClassifier
+# type: ignore
+# stats
+from scipy.stats import kstest, pearsonr, f_oneway, chi2_contingency
+from scipy import sparse
+from tqdm import tqdm
+
+import random
 
 # Read the raw data
 data = pd.read_csv("./investigator_nacc57.csv")
@@ -47,6 +54,9 @@ mental = ["ALCOHOL", "PTSD", "BIPOLAR", "SCHIZ", "DEP2YRS", "DEPOTHR", "ANXIETY"
 # bills, taxes, shopping, games, stove, meal, events, paying attention, remembering dates, trave l
 habil = ["BILLS", "TAXES", "SHOPPING", "GAMES", "STOVE", "MEALPREP", "EVENTS", "PAYATTN", "REMDATES", "TRAVEL"]
 
+# and all of it that we are interested in, we are just adding them all up here
+interest = democraphics + hereditary_history + drug_use + behaviorial + heart + brain + medical_misc + mental + habil
+
 ########################################################################
 
 # Get a list of participants
@@ -55,24 +65,60 @@ participants = data["NACCID"]
 # Drop the parcticipants 
 data = data.drop(columns="NACCID")
 
-# Make it a multiindex
+# Make it a multiindex by combining the experiment ID with the participant
+# so we can index by participant as first pass
 index_participant_correlated = list(zip(participants, pd.RangeIndex(0, len(data))))
 index_multi = pd.MultiIndex.from_tuples(index_participant_correlated, names=["Participant ID", "Entry ID"])
 data.index = index_multi
-data.loc[2]
 
-
-# The column we are predicting on should be NACCALZD, presumptive
-# etiologic diagnosis of the cognitive disorder of Alzheimer’s disease
-# ("NACC" "Alzhimer" "Diagnoses" NACCALZD)
+# Choorelation target, which is chimerical
 naccalzd = data["NACCALZD"]
 
-# 0 - No, 1 - Yes, 8 - N/A (no cog. impairment)
-# Let's replace 8 with 2 
-naccalzd = naccalzd.replace(8, 2)
-# So now
-# 0 - No, 1 - Yes, 2 - N/A (no cog. impairment)
-
-
+# For each feature of interest, we perform a
+# one-way chi-square test for choorelation. Note about the
+# P-values here: the null hypothesis is that the
+# two groups are INDEPENDENT, so a small p-value is desired
+# here.
+# 
+# Therefore, we hope that groups 1, 8, and 0 are significantly
+# different in terms of mean in that variable.
 #
-data
+# We perform chi-square here because most of the input data can be broken
+# down into categories to analyze (they are (mostly) not continuous)
+# if they are continuous, we will integer quantize it
+#
+# Furthermore, we create two results with and without ignoring
+# naccalzd = 8 because impaired vs. AD is a /very/ different problem
+# than normal limits vs. AD
+
+# tabulate results
+results = {}
+
+# calculate all results
+for feature in tqdm(interest):
+    # index the data for the features
+    f_index = data[naccalzd != 8][feature]
+    # split results into groups
+    crosstab = pd.crosstab(naccalzd[naccalzd != 8], round(data[naccalzd != 8][feature]))
+
+    # calculate
+    imp_vs_ad = chi2_contingency(crosstab)[1]
+
+    # index the data for the features
+    f_index = data[feature]
+    # split results into groups
+    crosstab = pd.crosstab(naccalzd, round(data[feature]))
+
+    # calculate
+    ctrl_vs_ad = chi2_contingency(crosstab)[1]
+
+    # submit!
+    results[feature] = {"iva": imp_vs_ad,
+                        "nva": ctrl_vs_ad}
+
+# generate a dataframe
+results_df = pd.DataFrame(results).transpose()
+results_df = results_df.sort_values("iva")
+
+# save results
+results_df.to_csv("correlate.csv")
