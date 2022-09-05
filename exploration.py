@@ -2,6 +2,7 @@
 import pandas as pd
 # type: ignore
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
 # type: ignore
 # stats
 from scipy.stats import kstest, pearsonr, f_oneway, chi2_contingency
@@ -9,6 +10,8 @@ from scipy import sparse
 from tqdm import tqdm
 
 import random
+
+from matplotlib import pyplot as plt
 
 # Read the raw data
 data = pd.read_csv("./investigator_nacc57.csv")
@@ -73,6 +76,13 @@ data.index = index_multi
 
 # Choorelation target, which is chimerical
 naccalzd = data["NACCALZD"]
+# selection keys for MCI and WNL
+MCI_key = naccalzd == 0
+AD_key = naccalzd == 1
+CTL_key = naccalzd == 8
+
+
+############ Correlation Study ############ 
 
 # For each feature of interest, we perform a
 # one-way chi-square test for choorelation. Note about the
@@ -120,5 +130,53 @@ for feature in tqdm(interest):
 results_df = pd.DataFrame(results).transpose()
 results_df = results_df.sort_values("iva")
 
+# interesting indicies
+top_50 = results_df.iloc[:80]
+top50_indicies = top_50.index
+top_50_crop_life = top50_indicies[12:]
+
 # save results
-results_df.to_csv("correlate.csv")
+# results_df.to_csv("correlate.csv")
+
+############ Classification Study ############ 
+
+# test tree utilities and reporting
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.tree import plot_tree
+
+# Select equal amounts of class `0` (MCI) and `1` (AD)
+mci_data = data[naccalzd == 0]
+ad_data = data[naccalzd == 1]
+
+# get cropsize
+crop = min(len(mci_data), len(ad_data))
+bal_data = pd.concat([mci_data.iloc[:crop], ad_data.iloc[:crop]])
+
+# features of interest
+in_features = ["NACCAANX", "TOBAC30", "NACCNSD", "DEPOTHR", "ALCOHOL"]
+# all of the top 50 bar the life stabilties ones
+# in_features = top_50_crop_life 
+
+# get in/out data
+# the output is just naccalzd label
+in_data = bal_data[in_features]
+out_data = bal_data.NACCALZD
+
+# split train test
+x_train, x_test, y_train, y_test = train_test_split(in_data, out_data, test_size=0.1, random_state=42)
+x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=42)
+
+# ok simple classifiers time
+# fit 
+clsf = SVC()
+clsf = clsf.fit(x_train, y_train)
+# score
+clsf.score(x_val, y_val)
+# report
+preds = clsf.predict(x_val)
+print(classification_report(y_val, preds))
+
+t = plot_tree(clsf)
+
+
