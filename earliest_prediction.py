@@ -166,5 +166,5 @@ clsf = RandomForestClassifier(random_state=42)
 clsf = clsf.fit(x_train[in_features], y_train)
 
 # and print a report
-print(classification_report(clsf.predict(x_val[in_features]), y_val))
+print(classification_report(y_val, clsf.predict(x_val[in_features])))
 
