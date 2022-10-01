@@ -77,9 +77,10 @@ data.index = index_multi
 # Choorelation target, which is chimerical
 naccalzd = data["NACCALZD"]
 # selection keys for MCI and WNL
-MCI_key = naccalzd == 0
+MCI_key = naccalzdnaccalzd == 0
 AD_key = naccalzd == 1
 CTL_key = naccalzd == 8
+
 
 
 ############ Correlation Study ############ 
@@ -135,6 +136,9 @@ top_50 = results_df.iloc[:80]
 top50_indicies = top_50.index
 top_50_crop_life = top50_indicies[12:]
 
+data.NACCFFTD[MCI_key].describe()
+data.NACCFFTD[AD_key].describe()
+
 # save results
 # results_df.to_csv("correlate.csv")
 
@@ -154,9 +158,9 @@ crop = min(len(mci_data), len(ad_data))
 bal_data = pd.concat([mci_data.iloc[:crop], ad_data.iloc[:crop]])
 
 # features of interest
-in_features = ["NACCAANX", "TOBAC30", "NACCNSD", "DEPOTHR", "ALCOHOL"]
+# in_features = ["NACCAANX", "TOBAC30", "NACCNSD", "DEPOTHR", "ALCOHOL"]
 # all of the top 50 bar the life stabilties ones
-# in_features = top_50_crop_life 
+in_features = top_50_crop_life 
 
 # get in/out data
 # the output is just naccalzd label
