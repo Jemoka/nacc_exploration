@@ -27,7 +27,7 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from scipy.stats import chi2_contingency
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, validation_curve
 
 import random
 
@@ -35,6 +35,13 @@ from matplotlib import pyplot as plt
 
 # Read the raw data
 data = pd.read_csv("./investigator_nacc57.csv")
+
+#######################################################################
+
+# augment the data
+
+## age group
+data["age_group"] = ((data["NACCAGE"]//10)*10).astype(int)
 
 #######################################################################
 
@@ -65,6 +72,8 @@ RACE = data.NACCNIHR
 
 # groupby race
 data.groupby("Participant ID").first().NACCNIHR.value_counts()
+
+data.OTRAILA.value_counts()
 
 #######################################################################
 
@@ -111,7 +120,6 @@ cleaned_data_drop = cleaned_data.drop(columns=["NACCETPR", "NACCUDSD", "NACCADC"
                                                "NACCDSDY", "NACCNORM", "INKNOWN",
                                                "NACCAVST", "NACCNVST", "INBIRMO",
                                                "LOGIYR", "INEDUC"])
-
 # other ones: BEVHAGO, BEREMAGO
 
 ## !!!PEOPLE WHO LATER GET DEMENITA: NACCIDEM, NACCMCII
@@ -166,5 +174,15 @@ clsf = RandomForestClassifier(random_state=42)
 clsf = clsf.fit(x_train[in_features], y_train)
 
 # and print a report
-print(classification_report(y_val, clsf.predict(x_val[in_features])))
 
+
+max(x_val.age_group)
+
+for age_group in range(0, 110, 10):
+    if len(y_val[x_val.age_group == age_group]) > 0:
+        print(f"for {age_group}")
+        print(classification_report(y_val[x_val.age_group ==age_group], clsf.predict(x_val[x_val.age_group ==age_group][in_features]), labels=[1,2,3,4]))
+    
+
+
+data.NACCDIED.value_counts()
