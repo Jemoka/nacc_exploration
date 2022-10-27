@@ -173,10 +173,7 @@ x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.
 clsf = RandomForestClassifier(random_state=42)
 clsf = clsf.fit(x_train[in_features], y_train)
 
-# and print a report
-
-
-max(x_val.age_group)
+# and print a report (by age group!)
 
 for age_group in range(0, 110, 10):
     if len(y_val[x_val.age_group == age_group]) > 0:
@@ -184,5 +181,31 @@ for age_group in range(0, 110, 10):
         print(classification_report(y_val[x_val.age_group ==age_group], clsf.predict(x_val[x_val.age_group ==age_group][in_features]), labels=[1,2,3,4]))
     
 
+#######################################################################
+
+# experiment #3:
+# classification, against NACCMCII and NACCIDEM
+
+# split the data such that we include those who do NOT have current MCI
+mci_prgression = cleaned_data[(COG_STATUS == 1) & cleaned_data.NACCMCII==1]
+
+# we want to get all the data for which we have longitudanal progression data
+all_healthy = cleaned_data[(COG_STATUS == 1 & (cleaned_data.NACCMCII!=8))]
+all_healthy
+
+
+
+# split train test
+x_train, x_test, y_train, y_test = train_test_split(cleaned_data, mci_prgression.NACCUDSD, test_size=0.1, random_state=42)
+x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=42)
+
+
+
+
+
+max(x_val.age_group)
+
+
 
 data.NACCDIED.value_counts()
+cleaned_data[COG_STATUS==4].NACCIDEM
