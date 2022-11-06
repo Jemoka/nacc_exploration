@@ -71,8 +71,10 @@ mental = ["ALCOHOL", "PTSD", "BIPOLAR", "SCHIZ", "DEP2YRS", "DEPOTHR", "ANXIETY"
 # bills, taxes, shopping, games, stove, meal, events, paying attention, remembering dates, trave l
 habil = ["BILLS", "TAXES", "SHOPPING", "GAMES", "STOVE", "MEALPREP", "EVENTS", "PAYATTN", "REMDATES", "TRAVEL"]
 
-# and all of it that we are interested in, we are just adding them all up here
-interest = hereditary_history + drug_use + behaviorial + heart + brain + medical_misc + mental
+# Neuralpsycological Tests
+# generic list of neuralpsycological test
+with open("./neuralpsych", 'r') as df:
+    neuralpsych = df.read().strip().split('\n')
 
 #######################################################################
 
@@ -151,39 +153,9 @@ DIAGNOSES = data.NACCETPR
 
 ###################################################################
 
-# Classification result
-X = data[interest]
-feature_selecter = SelectKBest(chi2, k=5).fit(abs(X), DIAGNOSES)
-
-# test tree utilities and reporting
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-from sklearn.tree import plot_tree
-
-# get the input features
-in_features = feature_selecter.get_feature_names_out() 
-
-# get in/out data
-in_data = data[in_features]
-out_data = DIAGNOSES
-
-
-# split train test
-x_train, x_test, y_train, y_test = train_test_split(in_data, out_data, test_size=0.1, random_state=42)
-x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=42)
-
-# ok simple classifiers time
-clsf = DecisionTreeClassifier()
-clsf = clsf.fit(x_train, y_train)
-preds = clsf.predict(x_val)
-print(classification_report(y_val, preds))
-in_features
-
-########################################################################
-
 # select for dementia that is...
-MORE_THAN = 0 # years away, but 
-LESS_THAN = 6 # years away
+MORE_THAN = -0.1 # years away, but 
+LESS_THAN = 2.1 # years away
 
 # for each feature, calculate their chi2 contingency with the cognitive status data
 # drap non-numeric clomuns and nansj
@@ -210,42 +182,19 @@ cleaned_data = cleaned_data.sample(frac=1, random_state=42)
 cleaned_labels = cleaned_data.timeseries_label
 
 # we drop some columns from this info
-cleaned_data_drop = cleaned_data.drop(columns=["NACCETPR", "NACCUDSD", "NACCADC",
-                                               "NACCDAYS", "DECAGE", "NACCYOD",
-                                               "NACCFDYS", "PDYR", "HATTYEAR",
-                                               "BEAGE", "PDOTHRYR", "TBIYEAR",
-                                               "NACCDSYR", "MOAGE", "NACCINT",
-                                               "NACCINT", "NACCDAGE", "PARKAGE",
-                                               "COGFLAGO", "ALSAGE", "NACCIDEM",
-                                               "NACCMCII", "BEVHAGO", "BEREMAGO",
-                                               "NACCLBDE", "QUITSMOK", "INBIRYR",
-                                               "NACCALZD", "NACCPPA", "NACCCOGF",
-                                               "COURSE", "FRSTCHG", "NACCBVFT",
-                                               "NACCLBDS", "PPAPH", "VASC",
-                                               "COGMODE", "NACCMCIA", "NACCMCIV",
-                                               "POSSAD", "FTD", "ALCDEM", "DEMUN",
-                                               "NACCMOD", "NACCBEHF", "NACCMCIL",
-                                               "NACCMCIE", "NACCALZP", "PROBAD",
-                                               "NACCMOTF", "IMPNOMCI", "VASCPS",
-                                               "MOMODE", "INHISPOR", "INRASEC",
-                                               "BEMODE", "NACCTMCI", "INRATER",
-                                               "COGMEM", "NACCSTYR", "NACCDSMO",
-                                               "COGJUDG", "NACCTIYR", "NORMCOG",
-                                               "NACCDSDY", "NACCNORM", "INKNOWN",
-                                               "NACCAVST", "NACCNVST", "INBIRMO",
-                                               "LOGIYR", "INEDUC", "timeseries_label",
-                                               "age_til_dementia"])
+cleaned_data_drop = cleaned_data[neuralpsych]
+
 # other ones: BEVHAGO, BEREMAGO
 X = cleaned_data_drop
 y = cleaned_labels
 
-feature_selecter = SelectKBest(chi2, k=10).fit(abs(X), y)
+feature_selecter = SelectKBest(k=10).fit(abs(X), y)
 
 # test tree utilities and reporting
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.tree import plot_tree
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
 # get the input features
 in_features = feature_selecter.get_feature_names_out() 
@@ -260,11 +209,11 @@ x_train, x_test, y_train, y_test = train_test_split(in_data, out_data, test_size
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=42)
 
 # fit!
-clsf = RandomForestClassifier(random_state=42)
-clsf = clsf.fit(x_train, y_train)
+classifier:RandomForestClassifier = GradientBoostingClassifier(random_state=42)
+classifier = classifier.fit(x_train, y_train)
 
 # predict!
-preds = clsf.predict(x_val)
+preds = classifier.predict(x_val)
 print(classification_report(y_val, preds))
 
 in_features

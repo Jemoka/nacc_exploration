@@ -95,6 +95,8 @@ def try_chi_squared(X, y):
 cog_status_corell = cleaned_data.apply(lambda x: try_chi_squared(x, COG_STATUS), axis=0)
 cog_status_corell = cog_status_corell.sort_values()
 
+cleaned_data_drop
+
 # we drop some columns from this info
 cleaned_data_drop = cleaned_data.drop(columns=["NACCETPR", "NACCUDSD", "NACCADC",
                                                "NACCDAYS", "DECAGE", "NACCYOD",
