@@ -8,7 +8,9 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 # feature selection
-from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import SelectKBest, VarianceThreshold
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_selection import chi2
 # type: ignore
 # stats
@@ -155,7 +157,7 @@ DIAGNOSES = data.NACCETPR
 
 # select for dementia that is...
 MORE_THAN = -0.1 # years away, but 
-LESS_THAN = 2.1 # years away
+LESS_THAN = 0.1 # years away
 
 # for each feature, calculate their chi2 contingency with the cognitive status data
 # drap non-numeric clomuns and nansj
@@ -181,14 +183,15 @@ cleaned_data = cleaned_data.sample(frac=1, random_state=42)
 # and get labels
 cleaned_labels = cleaned_data.timeseries_label
 
-# we drop some columns from this info
+# we drop some columns from this info except for neuropsych
 cleaned_data_drop = cleaned_data[neuralpsych]
 
 # other ones: BEVHAGO, BEREMAGO
 X = cleaned_data_drop
 y = cleaned_labels
 
-feature_selecter = SelectKBest(k=10).fit(abs(X), y)
+feature_selecter = SelectKBest(k=10).fit(X, y)
+(feature_selecter.pvalues_<0.01).sum()
 
 # test tree utilities and reporting
 from sklearn.model_selection import train_test_split
@@ -203,17 +206,19 @@ in_features = feature_selecter.get_feature_names_out()
 in_data = cleaned_data_drop[in_features]
 out_data = cleaned_labels
 
-
 # split train test
 x_train, x_test, y_train, y_test = train_test_split(in_data, out_data, test_size=0.1, random_state=42)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=42)
 
 # fit!
-classifier:RandomForestClassifier = GradientBoostingClassifier(random_state=42)
+classifier = KNeighborsClassifier()
 classifier = classifier.fit(x_train, y_train)
 
 # predict!
 preds = classifier.predict(x_val)
-print(classification_report(y_val, preds))
 
-in_features
+import pickle
+with open("./maskedata.bin", "wb") as df:
+    pickle.dump({"in": in_data, "out": out_data, "features": in_features }, df)
+
+
