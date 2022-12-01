@@ -1,4 +1,4 @@
-# exploration anew!
+# exploratio anew!
 
 # type: ignore
 from os import times_result
@@ -19,6 +19,7 @@ from scipy import sparse
 from tqdm import tqdm
 # sns
 import seaborn as sns
+import numpy as np
 
 import random
 
@@ -184,11 +185,21 @@ cleaned_data = cleaned_data.sample(frac=1, random_state=42)
 cleaned_labels = cleaned_data.timeseries_label
 
 # we drop some columns from this info except for neuropsych
-cleaned_data_drop = cleaned_data[neuralpsych]
+cleaned_data_drop = cleaned_data
+
+# CHECK: [["MMSEORDA", "MOCATOTS"]][neuralpsych]
+# CHECK: BOSTON Naming test/MINT
+
+# Standardize against controls
+# 
 
 # other ones: BEVHAGO, BEREMAGO
 X = cleaned_data_drop
 y = cleaned_labels
+
+res = (X==-4).corr()
+vals = (res<-0.7)
+vals.index[vals["MMSEORDA"]]
 
 feature_selecter = SelectKBest(k=10).fit(X, y)
 (feature_selecter.pvalues_<0.01).sum()
@@ -198,6 +209,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.tree import plot_tree
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+
 
 # get the input features
 in_features = feature_selecter.get_feature_names_out() 
