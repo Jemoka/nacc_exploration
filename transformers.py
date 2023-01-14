@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import AdamW
-import tokenizers
 import numpy as np
 import pandas as pd
 
@@ -14,10 +13,6 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
 from sklearn.metrics import f1_score
-
-# Ling utilities
-import nltk
-from nltk import sent_tokenize
 
 # nicies
 from tqdm import tqdm
@@ -145,32 +140,32 @@ tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
                                             torch.argmax(logits.detach().cpu(), 1),
                                             average='weighted')
 
-# for epoch in range(EPOCHS):
-print(f"Currently training epoch {epoch}...")
+for epoch in range(EPOCHS):
+    print(f"Currently training epoch {epoch}...")
 
-for i, batch in enumerate(iter(dataloader)):
-    # send batch to GPU if needed
-    batch = [i.to(DEVICE) for i in batch]
+    for i, batch in tqdm(enumerate(iter(dataloader))):
+        # send batch to GPU if needed
+        batch = [i.to(DEVICE) for i in batch]
 
-    # generating validation output
-    if i % VALIDATE_EVERY == 0:
+        # generating validation output
+        if i % VALIDATE_EVERY == 0:
+            output = model(*batch)
+            run.log({"val_loss": val_loss.detach().cpu().item(),
+                    "val_f1": tensor_f1(output["logits"], batch[1])})
+            continue
+
+        # run with actual backprop
+        labels = batch[1]
         output = model(*batch)
-        run.log({"val_loss": val_loss.detach().cpu().item(),
-                "val_f1": tensor_f1(output["logits"], batch[1])})
-        continue
 
-    # run with actual backprop
-    labels = batch[1]
-    output = model(*batch)
+        # backprop
+        output["loss"].backward()
+        optimizer.step()
+        optimizer.zero_grad()
 
-    # backprop
-    output["loss"].backward()
-    optimizer.step()
-    optimizer.zero_grad()
-
-    # logging
-    run.log({"loss": output["loss"].detach().cpu().item(),
-            "f1": tensor_f1(output["logits"], batch[1])})
+        # logging
+        run.log({"loss": output["loss"].detach().cpu().item(),
+                "f1": tensor_f1(output["logits"], batch[1])})
 
 
 # Saving
