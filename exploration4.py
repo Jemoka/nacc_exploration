@@ -130,5 +130,3 @@ linear_corr["Score"] = R2_WEIGHT*linear_corr["R2"] + SIM_WEIGHT*(1-linear_corr["
 linear_corr = linear_corr.sort_values(by="Score", ascending=False)
 linear_corr.to_csv("./correlate_pairs_scored.csv", index=False)
 
-linear_corr
-

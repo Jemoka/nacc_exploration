@@ -91,13 +91,15 @@ class NACCNeuralPsychDataset(Dataset):
         # and set it
         one_hot_target[self.__target_indicies.index(target)] = 1
 
-        return torch.tensor(data).float(), torch.tensor(target).float()
+        return torch.tensor(data).float(), torch.tensor(one_hot_target).float()
 
     def __len__(self):
         return len(self.data)
 
 dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+data_iter = iter(dataloader)
 
-dataset[13]
+
 
 
