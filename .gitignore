@@ -6,3 +6,4 @@
 /correlate_full.csv
 env
 models
+wandb
