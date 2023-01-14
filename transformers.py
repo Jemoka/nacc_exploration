@@ -13,6 +13,8 @@ import wandb
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
+from sklearn.metrics import f1_score
+
 # Ling utilities
 import nltk
 from nltk import sent_tokenize
@@ -78,6 +80,8 @@ class NACCNeuralPsychDataset(Dataset):
         self.targets = self.raw_data[target_feature]
         self.data = self.raw_data[self.features] 
 
+        self._num_targets = len(self.features)
+
         # store the traget indicies
         self.__target_indicies = target_indicies
 
@@ -96,10 +100,83 @@ class NACCNeuralPsychDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+# the transformer network
+class NACCModel(nn.Module):
+
+    def __init__(self, num_features, num_classes, nhead=8, nlayers=3, hidden=64):
+        # call early initializers
+        super(NACCModel, self).__init__()
+
+        # the entry network ("linear embedding")
+        self.embedding = nn.Linear(num_features, hidden)
+        
+        # the encoder network
+        encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=nlayers)
+
+        # prediction network
+        self.linear = nn.Linear(hidden, num_classes)
+
+        # util layers
+        self.softmax = nn.Softmax(1)
+        self.cross_entropy = nn.CrossEntropyLoss()
+
+    def forward(self, x, labels=None):
+
+        net = self.embedding(x)
+        net = self.encoder(net)
+        net = self.linear(net)
+        net = self.softmax(net)
+
+        loss = None
+        if labels is not None:
+            loss = self.cross_entropy(net, labels)
+
+        return { "logits": net, "loss": loss }
+
 dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-data_iter = iter(dataloader)
+
+model = NACCModel(dataset._num_targets, 4).to(DEVICE)
+optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
+
+# calculate the f1 from tensors
+tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
+                                            torch.argmax(logits.detach().cpu(), 1),
+                                            average='weighted')
+
+# for epoch in range(EPOCHS):
+print(f"Currently training epoch {epoch}...")
+
+for i, batch in enumerate(iter(dataloader)):
+    # send batch to GPU if needed
+    batch = [i.to(DEVICE) for i in batch]
+
+    # generating validation output
+    if i % VALIDATE_EVERY == 0:
+        output = model(*batch)
+        run.log({"val_loss": val_loss.detach().cpu().item(),
+                "val_f1": tensor_f1(output["logits"], batch[1])})
+        continue
+
+    # run with actual backprop
+    labels = batch[1]
+    output = model(*batch)
+
+    # backprop
+    output["loss"].backward()
+    optimizer.step()
+    optimizer.zero_grad()
+
+    # logging
+    run.log({"loss": output["loss"].detach().cpu().item(),
+            "f1": tensor_f1(output["logits"], batch[1])})
 
 
+# Saving
+print("Saving model...")
+os.mkdir(f"./models/{run.name}")
+torch.save(model, f"./models/{run.name}/model.save")
+torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
 
