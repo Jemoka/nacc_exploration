@@ -30,9 +30,9 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 
 # initialize the model
 CONFIG = {
-    "epochs": 3,
-    "lr": 3e-3,
-    "batch_size": 32,
+    "epochs": 8,
+    "lr": 1e-2,
+    "batch_size": 1024,
 }
 
 # set up the run
@@ -98,7 +98,7 @@ class NACCNeuralPsychDataset(Dataset):
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=8, nlayers=3, hidden=64):
+    def __init__(self, num_features, num_classes, nhead=8, nlayers=6, hidden=256):
         # call early initializers
         super(NACCModel, self).__init__()
 
@@ -143,7 +143,7 @@ tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
 for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
-    for i, batch in tqdm(enumerate(iter(dataloader)), total=len(dataset)):
+    for i, batch in tqdm(enumerate(iter(dataloader)), total=len(dataloader)):
         # send batch to GPU if needed
         batch = [i.to(DEVICE) for i in batch]
 
