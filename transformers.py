@@ -140,6 +140,7 @@ tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
                                             torch.argmax(logits.detach().cpu(), 1),
                                             average='weighted')
 
+model.train()
 for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
@@ -149,9 +150,11 @@ for epoch in range(EPOCHS):
 
         # generating validation output
         if i % VALIDATE_EVERY == 0:
+            model.eval()
             output = model(*batch)
             run.log({"val_loss": output["loss"].detach().cpu().item(),
                     "val_f1": tensor_f1(output["logits"], batch[1])})
+            model.train()
             continue
 
         # run with actual backprop
