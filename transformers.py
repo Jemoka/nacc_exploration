@@ -150,7 +150,7 @@ for epoch in range(EPOCHS):
         # generating validation output
         if i % VALIDATE_EVERY == 0:
             output = model(*batch)
-            run.log({"val_loss": val_loss.detach().cpu().item(),
+            run.log({"val_loss": output["loss"].detach().cpu().item(),
                     "val_f1": tensor_f1(output["logits"], batch[1])})
             continue
 
