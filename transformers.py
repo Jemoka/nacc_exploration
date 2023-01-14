@@ -143,7 +143,7 @@ tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
 for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
-    for i, batch in tqdm(enumerate(iter(dataloader))):
+    for i, batch in tqdm(enumerate(iter(dataloader)), total=len(dataset)):
         # send batch to GPU if needed
         batch = [i.to(DEVICE) for i in batch]
 
