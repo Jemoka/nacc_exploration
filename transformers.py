@@ -36,7 +36,7 @@ CONFIG = {
 }
 
 # set up the run
-# run = wandb.init(project="mutembeds", entity="jemoka", config=CONFIG)
+# run = wandb.init(project="nacc", entity="jemoka", config=CONFIG)
 run = wandb.init(project="nacc", entity="jemoka", config=CONFIG, mode="disabled")
 config = run.config
 
