@@ -79,7 +79,7 @@ class NACCNeuralPsychDataset(Dataset):
         self.targets = self.raw_data[target_feature]
         self.data = self.raw_data[self.features] 
 
-        self._num_targets = len(self.features)
+        self._num_features = len(self.features)
 
         # store the traget indicies
         self.__target_indicies = target_indicies
@@ -139,7 +139,7 @@ class NACCModel(nn.Module):
 dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-model = NACCModel(dataset._num_targets, 4).to(DEVICE)
+model = NACCModel(dataset._num_features, 3).to(DEVICE)
 optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
 
 # calculate the f1 from tensors
