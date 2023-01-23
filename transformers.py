@@ -130,9 +130,8 @@ class NACCModel(nn.Module):
         loss = None
         if labels is not None:
             # TODO put weight on MCI
-            loss = (torch.log(net)*labels)*torch.tensor([1,1.3,1,1])
-
-            self.cross_entropy(net, labels)
+            # loss = (torch.log(net)*labels)*torch.tensor([1,1.3,1,1])
+            loss = self.cross_entropy(net, labels)
 
         return { "logits": net, "loss": loss }
 
