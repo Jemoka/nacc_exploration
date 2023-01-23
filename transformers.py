@@ -160,7 +160,7 @@ for epoch in range(EPOCHS):
         if i % VALIDATE_EVERY == 0:
             model.eval()
             output = model(*batch)
-            prec, recc, fb = tensor_metrics(output["logits"], batch[1])
+            prec, recc, fb, _ = tensor_metrics(output["logits"], batch[1])
             run.log({"val_loss": output["loss"].detach().cpu().item(),
                      "val_fb": fb,
                      "val_prec": prec,
@@ -178,7 +178,7 @@ for epoch in range(EPOCHS):
         optimizer.zero_grad()
 
         # metrics
-        prec, recc, fb = tensor_metrics(output["logits"], batch[1])
+        prec, recc, fb, _ = tensor_metrics(output["logits"], batch[1])
 
         # logging
         run.log({"loss": output["loss"].detach().cpu().item(),
