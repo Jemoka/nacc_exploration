@@ -1,5 +1,6 @@
 # type: ignore
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 # type: ignore
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
@@ -59,6 +60,15 @@ habil = ["BILLS", "TAXES", "SHOPPING", "GAMES", "STOVE", "MEALPREP", "EVENTS", "
 
 # and all of it that we are interested in, we are just adding them all up here
 interest = democraphics + hereditary_history + drug_use + behaviorial + heart + brain + medical_misc + mental + habil
+
+########################################################################
+
+# get the neuralpsych variables
+with open("./neuralpsych", 'r') as df:
+    lines = df.readlines()
+    lines = [i.strip() for i in lines]
+
+NEURALPSYCH = lines
 
 ########################################################################
 
@@ -148,24 +158,17 @@ data.NACCFFTD[AD_key].describe()
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.tree import plot_tree
-
-# Select equal amounts of class `0` (MCI) and `1` (AD)
-mci_data = data[naccalzd == 0]
-ad_data = data[naccalzd == 1]
-
-# get cropsize
-crop = min(len(mci_data), len(ad_data))
-bal_data = pd.concat([mci_data.iloc[:crop], ad_data.iloc[:crop]])
-
 # features of interest
 # in_features = ["NACCAANX", "TOBAC30", "NACCNSD", "DEPOTHR", "ALCOHOL"]
 # all of the top 50 bar the life stabilties ones
-in_features = top_50_crop_life 
+in_features = NEURALPSYCH 
+
+data = data[data.NACCUDSD != 2]
 
 # get in/out data
 # the output is just naccalzd label
-in_data = bal_data[in_features]
-out_data = bal_data.NACCALZD
+in_data = data[in_features]
+out_data = data.NACCUDSD
 
 # split train test
 x_train, x_test, y_train, y_test = train_test_split(in_data, out_data, test_size=0.1, random_state=42)
@@ -173,7 +176,7 @@ x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.
 
 # ok simple classifiers time
 # fit 
-clsf = SVC()
+clsf = RandomForestClassifier()
 clsf = clsf.fit(x_train, y_train)
 # score
 clsf.score(x_val, y_val)

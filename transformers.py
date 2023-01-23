@@ -12,7 +12,7 @@ import wandb
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
-from sklearn.metrics import f1_score
+from sklearn.metrics import precision_recall_fscore_support
 
 # nicies
 from tqdm import tqdm
@@ -142,9 +142,11 @@ model = NACCModel(dataset._num_features, 3).to(DEVICE)
 optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
 
 # calculate the f1 from tensors
-tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
-                                            torch.argmax(logits.detach().cpu(), 1),
-                                            average='weighted')
+def tensor_metrics(logits, labels):
+    label_indicies = torch.argmax(labels.cpu(), 1)
+    logits_indicies  = torch.argmax(logits.detach().cpu(), 1)
+
+    return precision_recall_fscore_support(label_indicies, logits_indicies)
 
 model.train()
 for epoch in range(EPOCHS):
@@ -158,8 +160,11 @@ for epoch in range(EPOCHS):
         if i % VALIDATE_EVERY == 0:
             model.eval()
             output = model(*batch)
+            prec, recc, fb = tensor_metrics(output["logits"], batch[1])
             run.log({"val_loss": output["loss"].detach().cpu().item(),
-                    "val_f1": tensor_f1(output["logits"], batch[1])})
+                     "val_fb": fb,
+                     "val_prec": prec,
+                     "val_recc": recc})
             model.train()
             continue
 
@@ -172,10 +177,14 @@ for epoch in range(EPOCHS):
         optimizer.step()
         optimizer.zero_grad()
 
+        # metrics
+        prec, recc, fb = tensor_metrics(output["logits"], batch[1])
+
         # logging
         run.log({"loss": output["loss"].detach().cpu().item(),
-                "f1": tensor_f1(output["logits"], batch[1])})
-
+                 "fb": fb,
+                 "prec": prec,
+                 "recc": recc})
 
 # Saving
 print("Saving model...")
