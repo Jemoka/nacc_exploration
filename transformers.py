@@ -53,7 +53,8 @@ LEARNING_RATE=config.lr
 class NACCNeuralPsychDataset(Dataset):
 
     def __init__(self, file_path, feature_path,
-                 target_feature="NACCUDSD", target_indicies=[1,2,3,4]):
+              # skipping 2 impaired because of labeling inconsistency
+                 target_feature="NACCUDSD", target_indicies=[1,3,4]):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -75,6 +76,9 @@ class NACCNeuralPsychDataset(Dataset):
         with open(feature_path, 'r') as df:
             lines = df.readlines()
             self.features = [i.strip() for i in lines]
+
+        # skip elements whose target is not in the list
+        self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
 
         # Calculate the target data
         self.targets = self.raw_data[target_feature]
@@ -130,7 +134,10 @@ class NACCModel(nn.Module):
 
         loss = None
         if labels is not None:
-            loss = self.cross_entropy(net, labels)
+            # TODO put weight on MCI
+            loss = (torch.log(net)*labels)*torch.tensor([1,1.3,1,1])
+
+            self.cross_entropy(net, labels)
 
         return { "logits": net, "loss": loss }
 
