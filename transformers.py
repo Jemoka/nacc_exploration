@@ -146,7 +146,8 @@ def tensor_metrics(logits, labels):
     label_indicies = torch.argmax(labels.cpu(), 1)
     logits_indicies  = torch.argmax(logits.detach().cpu(), 1)
 
-    return precision_recall_fscore_support(label_indicies, logits_indicies)
+    return precision_recall_fscore_support(label_indicies, logits_indicies,
+                                           zero_division=0)
 
 model.train()
 for epoch in range(EPOCHS):
