@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import AdamW
-import tokenizers
 import numpy as np
 import pandas as pd
 
@@ -14,10 +13,6 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
 from sklearn.metrics import f1_score
-
-# Ling utilities
-import nltk
-from nltk import sent_tokenize
 
 # nicies
 from tqdm import tqdm
@@ -35,13 +30,13 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 
 # initialize the model
 CONFIG = {
-    "epochs": 3,
-    "lr": 3e-3,
-    "batch_size": 32,
+    "epochs": 128,
+    "lr": 1e-4,
+    "batch_size": 512,
 }
 
 # set up the run
-# run = wandb.init(project="mutembeds", entity="jemoka", config=CONFIG)
+# run = wandb.init(project="nacc", entity="jemoka", config=CONFIG)
 run = wandb.init(project="nacc", entity="jemoka", config=CONFIG, mode="disabled")
 config = run.config
 
@@ -107,7 +102,7 @@ class NACCNeuralPsychDataset(Dataset):
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=8, nlayers=3, hidden=64):
+    def __init__(self, num_features, num_classes, nhead=8, nlayers=6, hidden=256):
         # call early initializers
         super(NACCModel, self).__init__()
 
@@ -152,32 +147,35 @@ tensor_f1 = lambda logits, labels: f1_score(torch.argmax(labels.cpu(), 1),
                                             torch.argmax(logits.detach().cpu(), 1),
                                             average='weighted')
 
-# for epoch in range(EPOCHS):
-print(f"Currently training epoch {epoch}...")
+model.train()
+for epoch in range(EPOCHS):
+    print(f"Currently training epoch {epoch}...")
 
-for i, batch in enumerate(iter(dataloader)):
-    # send batch to GPU if needed
-    batch = [i.to(DEVICE) for i in batch]
+    for i, batch in tqdm(enumerate(iter(dataloader)), total=len(dataloader)):
+        # send batch to GPU if needed
+        batch = [i.to(DEVICE) for i in batch]
 
-    # generating validation output
-    if i % VALIDATE_EVERY == 0:
+        # generating validation output
+        if i % VALIDATE_EVERY == 0:
+            model.eval()
+            output = model(*batch)
+            run.log({"val_loss": output["loss"].detach().cpu().item(),
+                    "val_f1": tensor_f1(output["logits"], batch[1])})
+            model.train()
+            continue
+
+        # run with actual backprop
+        labels = batch[1]
         output = model(*batch)
-        run.log({"val_loss": val_loss.detach().cpu().item(),
-                "val_f1": tensor_f1(output["logits"], batch[1])})
-        continue
 
-    # run with actual backprop
-    labels = batch[1]
-    output = model(*batch)
+        # backprop
+        output["loss"].backward()
+        optimizer.step()
+        optimizer.zero_grad()
 
-    # backprop
-    output["loss"].backward()
-    optimizer.step()
-    optimizer.zero_grad()
-
-    # logging
-    run.log({"loss": output["loss"].detach().cpu().item(),
-            "f1": tensor_f1(output["logits"], batch[1])})
+        # logging
+        run.log({"loss": output["loss"].detach().cpu().item(),
+                "f1": tensor_f1(output["logits"], batch[1])})
 
 
 # Saving
