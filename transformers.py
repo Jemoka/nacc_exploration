@@ -144,7 +144,7 @@ optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
 # calculate the f1 from tensors
 def tensor_metrics(logits, labels):
     label_indicies = torch.argmax(labels.cpu(), 1)
-    logits_indicies  = torch.argmax(logits.detach().cpu(), 1)
+    logits_indicies  = logits.detach().cpu()
 
     class_names = ["Control", "MCI", "Dementia"]
 
