@@ -151,7 +151,7 @@ def tensor_metrics(logits, labels):
     pr_curve = wandb.plot.pr_curve(label_indicies, logits_indicies, labels = class_names)
     cm = wandb.plot.confusion_matrix(
         y_true= label_indicies,
-        preds=logits_indicies,
+        probs=logits_indicies,
         class_names=class_names
     )
     return pr_curve, cm
