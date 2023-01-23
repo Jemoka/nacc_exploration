@@ -146,8 +146,15 @@ def tensor_metrics(logits, labels):
     label_indicies = torch.argmax(labels.cpu(), 1)
     logits_indicies  = torch.argmax(logits.detach().cpu(), 1)
 
-    return precision_recall_fscore_support(label_indicies, logits_indicies,
-                                           zero_division=0)
+    class_names = ["Control", "MCI", "Dementia"]
+
+    pr_curve = wandb.plot.pr_curve(label_indicies, logits_indicies, labels = class_names)
+    cm = wandb.plot.confusion_matrix(
+        y_true= label_indicies,
+        preds=logits_indicies,
+        class_names=class_names
+    )
+    return pr_curve, cm
 
 model.train()
 for epoch in range(EPOCHS):
@@ -161,11 +168,10 @@ for epoch in range(EPOCHS):
         if i % VALIDATE_EVERY == 0:
             model.eval()
             output = model(*batch)
-            prec, recc, fb, _ = tensor_metrics(output["logits"], batch[1])
+            prec_recc, cm = tensor_metrics(output["logits"], batch[1])
             run.log({"val_loss": output["loss"].detach().cpu().item(),
-                     "val_fb": fb,
-                     "val_prec": prec,
-                     "val_recc": recc})
+                     "val_prec_recc": prec_recc,
+                     "val_confusion": cm})
             model.train()
             continue
 
@@ -178,14 +184,8 @@ for epoch in range(EPOCHS):
         optimizer.step()
         optimizer.zero_grad()
 
-        # metrics
-        prec, recc, fb, _ = tensor_metrics(output["logits"], batch[1])
-
         # logging
-        run.log({"loss": output["loss"].detach().cpu().item(),
-                 "fb": fb,
-                 "prec": prec,
-                 "recc": recc})
+        run.log({"loss": output["loss"].detach().cpu().item()})
 
 # Saving
 print("Saving model...")
