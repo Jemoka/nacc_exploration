@@ -49,7 +49,8 @@ class NACCNeuralPsychDataset(Dataset):
 
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_feature="NACCUDSD", target_indicies=[1,3,4]):
+                 target_feature="NACCUDSD", target_indicies=[1,3,4],
+                 emph=3):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -59,6 +60,7 @@ class NACCNeuralPsychDataset(Dataset):
         [target_feature] (str): the name of feature to serve as the target
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
+        [emph] (int): the index to emphasize 
         """
 
         # initialize superclass
@@ -71,6 +73,10 @@ class NACCNeuralPsychDataset(Dataset):
         with open(feature_path, 'r') as df:
             lines = df.readlines()
             self.features = [i.strip() for i in lines]
+
+        # basic dataaug
+        if emph:
+            self.raw_data = pd.concat([self.raw_data, self.raw_data[self.raw_data[target_feature]==emph]])
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
@@ -149,12 +155,13 @@ def tensor_metrics(logits, labels):
     class_names = ["Control", "MCI", "Dementia"]
 
     pr_curve = wandb.plot.pr_curve(label_indicies, logits_indicies, labels = class_names)
+    roc = wandb.plot.roc_curve(label_indicies, logits_indicies, labels = class_names)
     cm = wandb.plot.confusion_matrix(
         y_true=np.array(label_indicies), # can't labels index by scalar tensor
         probs=logits_indicies,
         class_names=class_names
     )
-    return pr_curve, cm
+    return pr_curve, roc, cm
 
 model.train()
 for epoch in range(EPOCHS):
@@ -168,10 +175,11 @@ for epoch in range(EPOCHS):
         if i % VALIDATE_EVERY == 0:
             model.eval()
             output = model(*batch)
-            prec_recc, cm = tensor_metrics(output["logits"], batch[1])
+            prec_recc, roc, cm = tensor_metrics(output["logits"], batch[1])
             run.log({"val_loss": output["loss"].detach().cpu().item(),
                      "val_prec_recc": prec_recc,
-                     "val_confusion": cm})
+                     "val_confusion": cm,
+                     "val_roc": roc})
             model.train()
             continue
 
