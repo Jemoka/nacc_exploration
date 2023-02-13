@@ -26,13 +26,13 @@ import random
 VALIDATE_EVERY = 20
 
 # initialize the device
-DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device('cpu')
 
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 1e-4,
-    "batch_size": 512,
+    "lr": 1e-10,
+    "batch_size": 32,
 }
 
 # set up the run
@@ -85,22 +85,37 @@ class NACCNeuralPsychDataset(Dataset):
         self.targets = self.raw_data[target_feature]
         self.data = self.raw_data[self.features] 
 
-        self._num_features = len(self.features)
-
         # store the traget indicies
         self.__target_indicies = target_indicies
 
+        # get number of features, by hoisting the get function up and getting length
+        self._num_features = len(self.features)
+
     def __getitem__(self, index):
         # index the data
-        data = self.data.iloc[index]
-        target = self.targets.iloc[index]
+        data = self.data.iloc[index].copy()
+        target = self.targets.iloc[index].copy()
 
+        # the discussed dataprep
+        # if a data entry is <0 or >80, it is "not found"
+        # so, we encode those values as 0 in the FEATURE
+        # column, and encode another feature of "not-found"ness
+        data_found = (data > 80) | (data < 0)
+        data[data_found] = 0
+        # then, the found-ness becomes a mask
+        data_found_mask = (data_found)
+
+        # if it is a sample with no tangible data
+        # well give up and get another sample:
+        if sum(~data_found_mask) == 0:
+            return self[index-1 if index == len(self) else index+random.randint(-1,1)]
+        
         # seed the one-hot vector
         one_hot_target = [0 for _ in range(len(self.__target_indicies))]
         # and set it
         one_hot_target[self.__target_indicies.index(target)] = 1
 
-        return torch.tensor(data).float(), torch.tensor(one_hot_target).float()
+        return torch.tensor(data).long(), torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
 
     def __len__(self):
         return len(self.data)
@@ -113,23 +128,28 @@ class NACCModel(nn.Module):
         super(NACCModel, self).__init__()
 
         # the entry network ("linear embedding")
-        self.embedding = nn.Linear(num_features, hidden)
+        self.embedding = nn.Embedding(num_features, hidden)
         
         # the encoder network
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=nlayers)
 
+        # flatten
+        self.flatten = nn.Flatten()
+
         # prediction network
-        self.linear = nn.Linear(hidden, num_classes)
+        self.linear = nn.Linear(hidden*num_features, num_classes)
 
         # util layers
         self.softmax = nn.Softmax(1)
         self.cross_entropy = nn.CrossEntropyLoss()
 
-    def forward(self, x, labels=None):
+    def forward(self, x, mask, labels=None):
 
         net = self.embedding(x)
-        net = self.encoder(net)
+        # recall transformers are seq first
+        net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
+        net = self.flatten(net)
         net = self.linear(net)
         net = self.softmax(net)
 
@@ -173,18 +193,20 @@ for epoch in range(EPOCHS):
 
         # generating validation output
         if i % VALIDATE_EVERY == 0:
-            model.eval()
+            # model.eval()
             output = model(*batch)
-            prec_recc, roc, cm = tensor_metrics(output["logits"], batch[1])
-            run.log({"val_loss": output["loss"].detach().cpu().item(),
-                     "val_prec_recc": prec_recc,
-                     "val_confusion": cm,
-                     "val_roc": roc})
-            model.train()
+            try:
+                prec_recc, roc, cm = tensor_metrics(output["logits"], batch[2])
+                run.log({"val_loss": output["loss"].detach().cpu().item(),
+                            "val_prec_recc": prec_recc,
+                            "val_confusion": cm,
+                            "val_roc": roc})
+                # model.train()
+            except ValueError:
+                breakpoint()
             continue
 
         # run with actual backprop
-        labels = batch[1]
         output = model(*batch)
 
         # backprop
