@@ -108,7 +108,11 @@ class NACCNeuralPsychDataset(Dataset):
         # if it is a sample with no tangible data
         # well give up and get another sample:
         if sum(~data_found_mask) == 0:
-            return self[index-1 if index == len(self) else index+random.randint(-1,1)]
+            indx = random.randint(2,5)
+            if index-indx <= 0:
+                return self[index+indx]
+            else:
+                return self[index-indx]
         
         # seed the one-hot vector
         one_hot_target = [0 for _ in range(len(self.__target_indicies))]
