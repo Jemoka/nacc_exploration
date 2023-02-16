@@ -68,6 +68,8 @@ class NACCNeuralPsychDataset(Dataset):
 
         # Read the raw dataset
         self.raw_data = pd.read_csv(file_path)
+        # shuffle
+        self.raw_data = self.raw_data.sample(frac=1)
 
         # get the fature variables
         with open(feature_path, 'r') as df:
@@ -166,7 +168,7 @@ class NACCModel(nn.Module):
         return { "logits": net, "loss": loss }
 
 dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
-dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE)
 
 model = NACCModel(dataset._num_features, 3).to(DEVICE)
 optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
