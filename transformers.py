@@ -50,7 +50,7 @@ class NACCNeuralPsychDataset(Dataset):
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
                  target_feature="NACCUDSD", target_indicies=[1,3,4],
-                 emph=3):
+                 emph=3, val=0.001):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -61,6 +61,7 @@ class NACCNeuralPsychDataset(Dataset):
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
         [emph] (int): the index to emphasize 
+        [val] (float): number of samples to leave in the validation set
         """
 
         # initialize superclass
@@ -93,11 +94,16 @@ class NACCNeuralPsychDataset(Dataset):
         # get number of features, by hoisting the get function up and getting length
         self._num_features = len(self.features)
 
-    def __getitem__(self, index):
-        # index the data
-        data = self.data.iloc[index].copy()
-        target = self.targets.iloc[index].copy()
+        # crop the data for validatino
+        val_count = int(len(self.data)*val)
+        self.val_data = self.data[:val_count]
+        self.val_targets = self.targets[:val_count]
 
+        self.data = self.data[val_count:]
+        self.targets = self.targets[val_count:]
+
+
+    def __process(self, data, target, index=None):
         # the discussed dataprep
         # if a data entry is <0 or >80, it is "not found"
         # so, we encode those values as 0 in the FEATURE
@@ -110,6 +116,8 @@ class NACCNeuralPsychDataset(Dataset):
         # if it is a sample with no tangible data
         # well give up and get another sample:
         if sum(~data_found_mask) == 0:
+            if not index:
+                raise ValueError("All-Zero found in validation!")
             indx = random.randint(2,5)
             if index-indx <= 0:
                 return self[index+indx]
@@ -122,6 +130,33 @@ class NACCNeuralPsychDataset(Dataset):
         one_hot_target[self.__target_indicies.index(target)] = 1
 
         return torch.tensor(data).long(), torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
+
+
+    def __getitem__(self, index):
+        # index the data
+        data = self.data.iloc[index].copy()
+        target = self.targets.iloc[index].copy()
+
+        return self.__process(data, target, index)
+
+    def val(self):
+        """Return the validation set"""
+
+        # collect dataset
+        dataset = []
+
+        # get it
+        for index in range(len(self.val_data)):
+            try:
+                dataset.append(self.__process(self.val_data.iloc[index].copy(),
+                                            self.val_targets.iloc[index].copy()))
+            except ValueError:
+                continue # all zero ignore
+
+        # return parts
+        inp, mask, out = zip(*dataset)
+
+        return torch.stack(inp).long(), torch.stack(mask).bool(), torch.stack(out).float()
 
     def __len__(self):
         return len(self.data)
@@ -168,7 +203,9 @@ class NACCModel(nn.Module):
         return { "logits": net, "loss": loss }
 
 dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
-dataloader = DataLoader(dataset, batch_size=BATCH_SIZE)
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+VALIDATION_SET = [i.to(DEVICE) for i in dataset.val()]
 
 model = NACCModel(dataset._num_features, 3).to(DEVICE)
 optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
@@ -200,9 +237,9 @@ for epoch in range(EPOCHS):
         # generating validation output
         if i % VALIDATE_EVERY == 0:
             # model.eval()
-            output = model(*batch)
+            output = model(*VALIDATION_SET)
             try:
-                prec_recc, roc, cm = tensor_metrics(output["logits"], batch[2])
+                prec_recc, roc, cm = tensor_metrics(output["logits"], VALIDATION_SET[2])
                 run.log({"val_loss": output["loss"].detach().cpu().item(),
                             "val_prec_recc": prec_recc,
                             "val_confusion": cm,
@@ -210,7 +247,6 @@ for epoch in range(EPOCHS):
                 # model.train()
             except ValueError:
                 breakpoint()
-            continue
 
         # run with actual backprop
         output = model(*batch)
