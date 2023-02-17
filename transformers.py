@@ -96,11 +96,11 @@ class NACCNeuralPsychDataset(Dataset):
 
         # crop the data for validatino
         val_count = int(len(self.data)*val)
-        self.val_data = self.data[:val_count]
-        self.val_targets = self.targets[:val_count]
+        self.val_data = self.data.iloc[:val_count]
+        self.val_targets = self.targets.iloc[:val_count]
 
-        self.data = self.data[val_count:]
-        self.targets = self.targets[val_count:]
+        self.data = self.data.iloc[val_count:]
+        self.targets = self.targets.iloc[val_count:]
 
 
     def __process(self, data, target, index=None):
