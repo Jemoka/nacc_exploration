@@ -184,7 +184,7 @@ class NACCModel(nn.Module):
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)
         self.gelu = nn.GELU()
-        self.linear2 = nn.Linear(hidden, num_features)
+        self.linear2 = nn.Linear(hidden, num_classes)
         self.softmax = nn.Softmax(1)
 
         # loss
