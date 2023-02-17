@@ -196,6 +196,7 @@ class NACCModel(nn.Module):
         # recall transformers are seq first
         net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
         net = self.dropout(net)
+        net = self.flatten(net)
         net = self.linear1(net)
         net = self.gelu(net)
         net = self.linear2(net)
