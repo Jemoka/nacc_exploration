@@ -175,11 +175,11 @@ class NACCModel(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=nlayers)
 
-        # flatten
-        self.flatten = nn.Flatten()
+        # dropoutp!
+        self.dropout = nn.Dropout(0.1)
 
         # prediction network
-        self.linear = nn.Linear(hidden*num_features, num_classes)
+        self.linear = nn.Linear(num_features, num_classes)
 
         # util layers
         self.softmax = nn.Softmax(1)
@@ -190,7 +190,8 @@ class NACCModel(nn.Module):
         net = self.embedding(x)
         # recall transformers are seq first
         net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
-        net = self.flatten(net)
+        net = self.dropout(net)
+        net = torch.mean(net, dim=2)
         net = self.linear(net)
         net = self.softmax(net)
 
