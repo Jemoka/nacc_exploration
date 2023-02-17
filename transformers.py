@@ -31,7 +31,7 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 1e-5,
+    "lr": 5e-5,
     "batch_size": 128,
 }
 
