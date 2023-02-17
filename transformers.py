@@ -31,7 +31,7 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 5e-5,
+    "lr": 5e-4,
     "batch_size": 128,
 }
 
@@ -175,14 +175,19 @@ class NACCModel(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=nlayers)
 
+        # flatten!
+        self.flatten = nn.Flatten()
+
         # dropoutp!
         self.dropout = nn.Dropout(0.1)
 
         # prediction network
-        self.linear = nn.Linear(num_features, num_classes)
-
-        # util layers
+        self.linear1 = nn.Linear(hidden*num_features, hidden)
+        self.gelu = nn.GELU()
+        self.linear2 = nn.Linear(hidden, num_features)
         self.softmax = nn.Softmax(1)
+
+        # loss
         self.cross_entropy = nn.CrossEntropyLoss()
 
     def forward(self, x, mask, labels=None):
@@ -191,8 +196,9 @@ class NACCModel(nn.Module):
         # recall transformers are seq first
         net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
         net = self.dropout(net)
-        net = torch.mean(net, dim=2)
-        net = self.linear(net)
+        net = self.linear1(net)
+        net = self.gelu(net)
+        net = self.linear2(net)
         net = self.softmax(net)
 
         loss = None
