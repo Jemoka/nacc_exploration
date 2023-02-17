@@ -199,6 +199,7 @@ class NACCModel(nn.Module):
         net = self.linear1(net)
         net = self.gelu(net)
         net = self.linear2(net)
+        net = self.dropout(net)
         net = self.softmax(net)
 
         loss = None
