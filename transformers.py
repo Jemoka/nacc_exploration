@@ -30,9 +30,12 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 
 # initialize the model
 CONFIG = {
-    "epochs": 128,
-    "lr": 1e-4,
+    "epochs": 32,
+    "lr": 1e-3,
     "batch_size": 128,
+    "hidden": 64,
+    "heads": 4,
+    "encoder_layers": 2
 }
 
 # set up the run
@@ -43,6 +46,10 @@ config = run.config
 BATCH_SIZE = config.batch_size
 EPOCHS = config.epochs
 LEARNING_RATE=config.lr
+HIDDEN = config.hidden
+HEADS = config.heads
+LAYERS = config.encoder_layers
+
 
 # loading data
 class NACCNeuralPsychDataset(Dataset):
@@ -164,7 +171,7 @@ class NACCNeuralPsychDataset(Dataset):
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=8, nlayers=6, hidden=256):
+    def __init__(self, num_features, num_classes, nhead=HEADS, nlayers=LAYERS, hidden=HIDDEN):
         # call early initializers
         super(NACCModel, self).__init__()
 
