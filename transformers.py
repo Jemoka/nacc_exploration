@@ -32,7 +32,7 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 CONFIG = {
     "epochs": 32,
     "lr": 1e-3,
-    "batch_size": 128,
+    "batch_size": 796,
     "hidden": 64,
     "heads": 4,
     "encoder_layers": 2
