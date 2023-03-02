@@ -241,7 +241,7 @@ def tensor_metrics(logits, labels):
         class_names=class_names
     )
 
-    acc = sum(label_indicies == logits_indicies)/len(logits_indicies)
+    acc = sum(label_indicies == torch.argmax(logits_indicies, dim=1))/len(label_indicies)
 
     return pr_curve, roc, cm, acc
 
