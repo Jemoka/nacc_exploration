@@ -240,7 +240,10 @@ def tensor_metrics(logits, labels):
         probs=logits_indicies,
         class_names=class_names
     )
-    return pr_curve, roc, cm
+
+    acc = sum(label_indicies == logits_indicies)/len(logits_indicies)
+
+    return pr_curve, roc, cm, acc
 
 model.train()
 for epoch in range(EPOCHS):
@@ -255,11 +258,12 @@ for epoch in range(EPOCHS):
             # model.eval()
             output = model(*VALIDATION_SET)
             try:
-                prec_recc, roc, cm = tensor_metrics(output["logits"], VALIDATION_SET[2])
+                prec_recc, roc, cm, acc = tensor_metrics(output["logits"], VALIDATION_SET[2])
                 run.log({"val_loss": output["loss"].detach().cpu().item(),
                             "val_prec_recc": prec_recc,
                             "val_confusion": cm,
-                            "val_roc": roc})
+                            "val_roc": roc,
+                         "val_acc": acc})
                 # model.train()
             except ValueError:
                 breakpoint()
