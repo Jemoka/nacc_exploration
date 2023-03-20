@@ -360,11 +360,8 @@ for epoch in range(EPOCHS):
         run.log({"loss": output["loss"].detach().cpu().item()})
 
 # Saving
-# print("Saving model...")
-# os.mkdir(f"./models/{run.name}")
-# torch.save(model, f"./models/{run.name}/model.save")
-# torch.save(optimizer, f"./models/{run.name}/optimizer.save")
-
-
-
+print("Saving model...")
+os.mkdir(f"./models/{run.name}")
+torch.save(model, f"./models/{run.name}/model.save")
+torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
