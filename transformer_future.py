@@ -44,7 +44,7 @@ CONFIG = {
 }
 
 # set up the run
-# run = wandb.init(project="nacc_future", entity="jemoka", config=CONFIG)
+# run = wandb.init(project="nacc_future", entity="", config=CONFIG)
 run = wandb.init(project="nacc_future", entity="jemoka", config=CONFIG, mode="disabled")
 config = run.config
 
@@ -364,7 +364,7 @@ for epoch in range(EPOCHS):
 
 # Saving
 print("Saving model...")
-os.mkdir(f"./models/{run.name}")
-torch.save(model, f"./models/{run.name}/model.save")
-torch.save(optimizer, f"./models/{run.name}/optimizer.save")
+os.mkdir(f"./models/F_{config.model}_{run.name}")
+torch.save(model, f"./models/F_{config.model}_{run.name}/model.save")
+torch.save(optimizer, f"./models/F_{config.model}_{run.name}/optimizer.save")
 
