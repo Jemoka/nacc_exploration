@@ -30,12 +30,12 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 
 # initialize the model
 CONFIG = {
-    "epochs": 32,
-    "lr": 1e-2,
-    "batch_size": 64,
-    "hidden": 128,
+    "epochs": 128,
+    "lr": 0.00004307634322040571,
+    "batch_size": 59,
+    "hidden": 512,
     "heads": 4,
-    "encoder_layers": 4
+    "encoder_layers": 3
 }
 
 # set up the run
@@ -280,9 +280,9 @@ for epoch in range(EPOCHS):
         run.log({"loss": output["loss"].detach().cpu().item()})
 
 # Saving
-# print("Saving model...")
-# os.mkdir(f"./models/{run.name}")
-# torch.save(model, f"./models/{run.name}/model.save")
-# torch.save(optimizer, f"./models/{run.name}/optimizer.save")
+print("Saving model...")
+os.mkdir(f"./models/{run.name}")
+torch.save(model, f"./models/{run.name}/model.save")
+torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
 
