@@ -33,12 +33,12 @@ VALIDATE_EVERY = 20
 
 # initialize the model
 CONFIG = {
-    "epochs": 32,
-    "lr": 1e-2,
-    "batch_size": 64,
-    "hidden": 128,
-    "heads": 4,
-    "encoder_layers": 4,
+    "epochs": 128,
+    "lr": 5e-5,
+    "batch_size": 128,
+    "hidden": 256,
+    "heads": 8,
+    "encoder_layers": 6,
     "model": "eternal-yogurt-27",
     "bound": (1,3)
 }
