@@ -188,7 +188,9 @@ class NACCNeuralPsychDataset(Dataset):
             return age_til_dementia, [ ultimate_diag_type for _ in range(len(grp)) ]
 
         # weird data gymnastics to unpeel the two columns
+        print("Loading timeseries groups...")
         age_til_dementia, ultimate_diag_type = zip(*(age_date_data.groupby(level=0,axis=0).progress_apply(find_data)))
+        print("Done!")
 
         # create series for the outputs
         age_til_dementia_series = pd.concat(age_til_dementia)
