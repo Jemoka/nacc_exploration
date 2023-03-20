@@ -39,7 +39,7 @@ CONFIG = {
     "hidden": 128,
     "heads": 4,
     "encoder_layers": 4,
-    "model": "honest-valentine-20",
+    "model": "eternal-yogurt-27",
     "bound": (1,3)
 }
 
