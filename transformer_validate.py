@@ -200,6 +200,11 @@ dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
 model = torch.load(os.path.join(MODEL, "model.save"),
                    map_location=DEVICE).to(DEVICE)
 
+embeddings = model.embedding(torch.arange(0,100).to(DEVICE))
+
+# for indx, i in (emb
+
+
 # elements
 labels = []
 confidences = []
@@ -246,11 +251,28 @@ df.groupby(round(df.feature_percent, 1)).mean()
 
 
 def read_attention(mod, inp, out):
-    return out[0].sum(-1).squeeze()
+    print(out)
+    return out
 
-hook = model.encoder.layers[-1].self_attn.register_forward_hook(read_attention)
+tmp = pd.Series([-0.6017, -1.4213, -0.1744, -0.7487,  3.9498,  5.5751, -4.4889, -2.1936,
+       -3.6340,  0.1321,  1.3879,  3.3084,  5.8068, -0.6585, -1.5083,  0.8317,
+       0.8723,  3.7855,  4.4545,  4.4564, -1.7827, -1.1391, -5.1701, -3.4897,
+       -1.2304, -3.1686, -2.0418,  2.1061,  7.9796, -0.7690,  1.9104, -5.3666,
+       0.4209, -2.5557, -1.9161, -2.4140, -0.4391, -1.0187, -1.9612, -2.4329,
+       5.6491,  5.4506,  4.3944, -0.5510,  3.0210, -5.3870,  5.9335, -1.9257,
+       6.9999,  5.5075, -5.2941,  3.9323,  0.0622, -2.2690,  5.3083,  2.5578,
+       3.0858,  1.7683,  5.7945,  5.2832,  5.2984,  2.9409, -0.5184,  8.4684,
+       4.3989,  3.9700,  3.7639,  0.4790,  8.1474,  1.1683, -0.9344, -6.2655,
+       -1.6892, -0.4481, -0.5459, -2.6126, -1.8289,  1.8540,  3.0106, -1.8860,
+       -1.1338, -2.3526, -2.2765, -3.0212, -2.4682, -2.4467, -2.2888, -3.1426,
+       -2.6542, -2.0798, -1.5492, -1.1480, -2.1481, -4.5286, -1.4182, -0.4367,
+       -2.1292, -3.6011, -3.7934, -2.4401, -2.5840, -2.7806, -1.9196])
 
-i = dataset[0] 
+
+
+hook = model.encoder.layers[0].self_attn.register_forward_hook(read_attention)
+
+i = dataset[30] 
 
 # pass through the model
 inp = [j.unsqueeze(0).to(DEVICE) for j in i]
@@ -258,22 +280,32 @@ oup = model(*inp)
 
 hook.remove()
 
-tmp = pd.Series([-1.3668, -1.8046, -1.7830, -0.8079, -1.8558, -1.7853, -1.2525, -2.0575,
-                 -1.7061, -1.7932, -2.4580, -1.5750, -0.7206, -2.3476, -1.8048, -2.1570,
-                 -1.9656, -0.1466, -1.6438, -1.0996, -1.6864,  1.8741, -1.4301, -2.0249,
-                 0.8634, -1.5356, -0.8287, -0.0786, -2.6008, -1.6228, -0.6838, -1.0613,
-                 -1.7739, -2.4485, -1.1399, -2.2909, -0.6110, -1.2949, -2.5429, -1.8271,
-                 -1.4359, -1.3885, -2.0300, -1.1423,  0.8273, -3.2975, -2.3298, -1.0742,
-                 -1.9183, -0.5756, -2.1312, -1.9953, -1.6369, -2.0601, -1.8739, -2.2016,
-                 -1.6294, -2.3776, -2.3291, -1.8196, -1.5457, -1.0589, -2.2160, -0.3811,
-                 -0.7995, -0.7835, -1.7580, -0.9875, -1.6470, -2.4313, -1.9902, -1.1369,
-                 -1.0913, -1.3479, -1.4603, -2.2017, -1.4282, -0.8007, -1.3865, -1.7188,
-                 -1.3541, -1.5356, -2.4453, -0.9674, -1.9275, -1.8818, -1.7373, -1.6338,
-                 -0.8339, -0.9110, -0.5940, -2.1722, -0.7534, -1.6531, -2.5053, -2.0346,
-                 -1.7322, -1.4252, -1.1248, -1.4856, -1.2738, -1.6907, -1.4741])
 
-tmp = ((tmp-tmp.mean())/tmp.std()).tolist()
 
-zipped_attention = list(zip([i.item() for i in inp[0].squeeze()], tmp))
+with open("./neuralpsych", 'r') as df:
+    lines = df.readlines()
+    features = [i.strip() for i in lines]
+
+# features
+tmp = tmp*(1-(i[1].float())).numpy()
+tmp
+
+
+zipped_attention = list(zip(features, [i.item() for i in inp[0].squeeze()], tmp))
+
+tmp2 = pd.DataFrame(zipped_attention)
+
+print(tmp2.to_string())
+
+i[2]
+
+tmp2.columns=["feature", "data", "attention"]
+tmp2[tmp2["attention"]==0].loc[:,"attention"] = 0
+tmp2
+tmp2.to_csv("attention_control.csv")
+tmp2[tmp2["attention"] == 0]
+
+i[2]
+
+
 zipped_attention
-
