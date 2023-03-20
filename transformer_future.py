@@ -44,7 +44,7 @@ CONFIG = {
 }
 
 # set up the run
-# run = wandb.init(project="nacc_future", entity="", config=CONFIG)
+# run = wandb.init(project="nacc_future", entity="jemoka", config=CONFIG)
 run = wandb.init(project="nacc_future", entity="jemoka", config=CONFIG, mode="disabled")
 config = run.config
 
