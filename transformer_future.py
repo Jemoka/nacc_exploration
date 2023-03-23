@@ -34,7 +34,7 @@ VALIDATE_EVERY = 20
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 5e-5,
+    "lr": 5e-6,
     "batch_size": 128,
     "hidden": 256,
     "heads": 8,
