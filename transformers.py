@@ -178,7 +178,9 @@ class NACCModel(nn.Module):
         super(NACCModel, self).__init__()
 
         # the entry network ("linear embedding")
-        self.embedding = nn.Embedding(num_features, hidden)
+        # bigger than 80 means that its going to be out of bounds and therefore
+        # be masked out; so hard code 81
+        self.embedding = nn.Embedding(81, hidden)
         
         # the encoder network
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
