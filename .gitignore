@@ -7,3 +7,6 @@
 env
 models
 wandb
+/attention_control.csv
+/attention_dementia.csv
+/attention_mci.csv

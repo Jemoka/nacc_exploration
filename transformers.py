@@ -31,11 +31,12 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 0.00004307634322040571,
-    "batch_size": 59,
-    "hidden": 512,
-    "heads": 4,
-    "encoder_layers": 3
+    "lr": 0.0001,
+    "batch_size": 128,
+    "hidden": 256,
+    "heads": 8,
+    "encoder_layers": 6,
+    "featureset": "combined"
 }
 
 # set up the run
@@ -49,6 +50,7 @@ LEARNING_RATE=config.lr
 HIDDEN = config.hidden
 HEADS = config.heads
 LAYERS = config.encoder_layers
+FEATURESET = config.featureset
 
 
 # loading data
@@ -218,7 +220,7 @@ class NACCModel(nn.Module):
 
         return { "logits": net, "loss": loss }
 
-dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
+dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", f"./features/{FEATURESET}")
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 VALIDATION_SET = [i.to(DEVICE) for i in dataset.val()]
