@@ -34,7 +34,7 @@ VALIDATE_EVERY = 20
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 5e-5,
+    "lr": 5e-6,
     "batch_size": 128,
     "hidden": 256,
     "heads": 8,
@@ -113,7 +113,7 @@ class NACCNeuralPsychDataset(Dataset):
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
                  target_feature="NACCUDSD", target_indicies=[1,3,4],
-                 val=0.001, bound=BOUND):
+                 val=0.01, bound=BOUND):
         """The NeuralPsycology Dataset
 
         Arguments:
