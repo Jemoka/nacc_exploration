@@ -34,12 +34,13 @@ VALIDATE_EVERY = 20
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 5e-6,
-    "batch_size": 128,
+    "lr": 0.00001,
+    "batch_size": 32,
     "hidden": 256,
     "heads": 8,
     "encoder_layers": 6,
-    "model": "eternal-yogurt-27",
+    "featureset": "combined",
+    "model": "vulcan-bird-of-prey-39",
     "bound": (1,3)
 }
 
@@ -56,6 +57,7 @@ HEADS = config.heads
 LAYERS = config.encoder_layers
 MODEL = f"./models/{config.model}"
 BOUND = config.bound
+FEATURESET = config.featureset
 
 # the transformer network
 class NACCModel(nn.Module):
@@ -298,7 +300,7 @@ class NACCNeuralPsychDataset(Dataset):
         return len(self.data)
 
 # load data
-dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
+dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", f"./features/{FEATURESET}")
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 VALIDATION_SET = [i.to(DEVICE) for i in dataset.val()]
