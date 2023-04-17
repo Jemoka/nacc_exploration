@@ -31,8 +31,8 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 # initialize the model
 CONFIG = {
     "epochs": 128,
-    "lr": 0.00001,
-    "batch_size": 32,
+    "lr": 0.000015,
+    "batch_size": 94,
     "hidden": 256,
     "heads": 8,
     "encoder_layers": 6,
@@ -40,8 +40,8 @@ CONFIG = {
 }
 
 # set up the run
-run = wandb.init(project="nacc", entity="jemoka", config=CONFIG)
-# run = wandb.init(project="nacc", entity="jemoka", config=CONFIG, mode="disabled")
+# run = wandb.init(project="nacc", entity="jemoka", config=CONFIG)
+run = wandb.init(project="nacc", entity="jemoka", config=CONFIG, mode="disabled")
 config = run.config
 
 BATCH_SIZE = config.batch_size
