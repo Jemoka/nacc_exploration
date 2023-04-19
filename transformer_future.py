@@ -344,11 +344,15 @@ for epoch in range(EPOCHS):
             output = model(*VALIDATION_SET)
             try:
                 prec_recc, roc, cm, acc = tensor_metrics(output["logits"], VALIDATION_SET[2])
-                run.log({"val_loss": output["loss"].detach().cpu().item(),
-                            "val_prec_recc": prec_recc,
-                            "val_confusion": cm,
-                            "val_roc": roc,
-                         "val_acc": acc})
+                if i == 0 or i == len(dataloader)-1:
+                    run.log({"val_loss": output["loss"].detach().cpu().item(),
+                                "val_prec_recc": prec_recc,
+                                "val_confusion": cm,
+                                "val_roc": roc,
+                             "val_acc": acc})
+                else:
+                    run.log({"val_loss": output["loss"].detach().cpu().item(),
+                             "val_acc": acc})
                 # model.train()
             except ValueError:
                 breakpoint()
