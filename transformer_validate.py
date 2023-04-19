@@ -21,10 +21,11 @@ import pathlib
 import seaborn as sns
 
 # initialize the device
-DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device('cpu')
+# DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device('cpu')
+DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 # model to load
-MODEL = "./models/eternal-yogurt-27"
+MODEL = "./models/vulcan-bird-of-prey-39"
 
 # the transformer network
 class NACCModel(nn.Module):
@@ -34,7 +35,9 @@ class NACCModel(nn.Module):
         super(NACCModel, self).__init__()
 
         # the entry network ("linear embedding")
-        self.embedding = nn.Embedding(num_features, hidden)
+        # bigger than 80 means that its going to be out of bounds and therefore
+        # be masked out; so hard code 81
+        self.embedding = nn.Embedding(81, hidden)
         
         # the encoder network
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
@@ -75,6 +78,7 @@ class NACCModel(nn.Module):
             loss = self.cross_entropy(net, labels)
 
         return { "logits": net, "loss": loss }
+
 
 # loading data
 class NACCNeuralPsychDataset(Dataset):
@@ -194,16 +198,11 @@ class NACCNeuralPsychDataset(Dataset):
         return len(self.data)
 
 # load data
-dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./neuralpsych")
+dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./features/combined")
 
 # load model
 model = torch.load(os.path.join(MODEL, "model.save"),
                    map_location=DEVICE).to(DEVICE)
-
-embeddings = model.embedding(torch.arange(0,100).to(DEVICE))
-
-# for indx, i in (emb
-
 
 # elements
 labels = []
@@ -248,7 +247,6 @@ dementia = df[df.label == 2]
 dementia_acc = sum(dementia.correct)/len(dementia)
 
 df.groupby(round(df.feature_percent, 1)).mean()
-
 
 def read_attention(mod, inp, out):
     print(out)
