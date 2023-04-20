@@ -19,13 +19,16 @@ from torch.utils.data import Dataset, DataLoader
 import pathlib
 
 import seaborn as sns
+sns.set_theme("talk", style="darkgrid", palette="crest")
+
+
 
 # initialize the device
 # DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device('cpu')
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 # model to load
-MODEL = "./models/vulcan-bird-of-prey-39"
+MODEL = "../models/vulcan-bird-of-prey-39"
 
 # the transformer network
 class NACCModel(nn.Module):
@@ -58,11 +61,14 @@ class NACCModel(nn.Module):
         # loss
         self.cross_entropy = nn.CrossEntropyLoss()
 
-    def forward(self, x, mask, labels=None):
+    def forward(self, x, mask=None, labels=None):
 
         net = self.embedding(x)
         # recall transformers are seq first
-        net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
+        if mask == None:
+            net = self.encoder(net.transpose(0,1)).transpose(0,1)
+        else:
+            net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
         net = self.dropout(net)
         net = self.flatten(net)
         net = self.linear1(net)
@@ -198,112 +204,147 @@ class NACCNeuralPsychDataset(Dataset):
         return len(self.data)
 
 # load data
-dataset = NACCNeuralPsychDataset("./investigator_nacc57.csv", "./features/combined")
+dataset = NACCNeuralPsychDataset("../investigator_nacc57.csv", "../features/combined")
 
-# load model
+data = dataset.data
+
+dataset.targets.value_counts()
+
+# I'm sorry
+CHECK = lambda i: "Dementia" if i == 4 else "Control" if i == 1 else "MCI"
+
+percentage_missing = (data==-4).apply(sum, axis=1)/(data==-4).apply(len, axis=1)
+missing_data = pd.DataFrame({"Percent of Data Available": 1-percentage_missing,
+                             "Target": dataset.targets.apply(CHECK)})
+
+plt.figure().clear()
+plt.axes().set_box_aspect(1)
+sns.boxplot(data=missing_data, x="Target", y="Percent of Data Available").set(title="Percentage of Input Features Available for a Given Sample")
+# sns.heatmap(normal_norm, cmap=sns.color_palette("ch:s=-.2,r=.6", as_cmap=True), annot=True,
+#             xticklabels=["Control", "MCI", "Dementia"],
+#             yticklabels=["Control", "MCI", "Dementia"]).set(title="Clinical Diagnosis Prediction, 5% Holdout Validation Confusion Matrix (86.9% Overall Acc.)")
+plt.show()
+
+
+
+
+# # load model
 model = torch.load(os.path.join(MODEL, "model.save"),
                    map_location=DEVICE).to(DEVICE)
 
-# elements
-labels = []
-confidences = []
-results = []
-feats_presents = []
+from torch.onnx import export 
 
-for indx in tqdm(range(0, len(dataset), 100)):
-    i = dataset[indx] 
+inp = [j.unsqueeze(0).to(DEVICE) for j in dataset[121]]
+
+
+dataset[0]
+
+from torchviz import make_dot
+viz = make_dot(model(*inp)["loss"], params=dict(model.named_parameters()))
+viz.save("../figures/model.dot")
+
+export(model, inp[0], os.path.join(MODEL, "model.onnx"))
+
+# # elements
+# labels = []
+# confidences = []
+# results = []
+# feats_presents = []
+
+# for indx in tqdm(range(0, len(dataset), 100)):
+#     i = dataset[indx] 
     
-    # pass through the model
-    inp = [j.unsqueeze(0).to(DEVICE) for j in i]
-    oup = model(*inp)
+#     # pass through the model
+#     inp = [j.unsqueeze(0).to(DEVICE) for j in i]
+#     oup = model(*inp)
 
-    # get stats
-    label = torch.argmax(inp[2]).item()
-    confidence = max(oup["logits"].squeeze()).cpu().item()
-    result = (torch.argmax(oup["logits"].unsqueeze(0)) == label).cpu().item()
-    feats_present = (sum(inp[1].squeeze())/len(inp[1].squeeze())).item()
+#     # get stats
+#     label = torch.argmax(inp[2]).item()
+#     confidence = max(oup["logits"].squeeze()).cpu().item()
+#     result = (torch.argmax(oup["logits"].unsqueeze(0)) == label).cpu().item()
+#     feats_present = (sum(inp[1].squeeze())/len(inp[1].squeeze())).item()
 
-    labels.append(label)
-    confidences.append(confidence)
-    results.append(result)
-    feats_presents.append(feats_present)
+#     labels.append(label)
+#     confidences.append(confidence)
+#     results.append(result)
+#     feats_presents.append(feats_present)
 
-df = pd.DataFrame({"label":labels,
-                   "correct":results,
-                   "confidence": confidences,
-                   "feature_percent": feats_presents})
+# df = pd.DataFrame({"label":labels,
+#                    "correct":results,
+#                    "confidence": confidences,
+#                    "feature_percent": feats_presents})
 
-# df.to_csv(f"./models/{pathlib.Path(MODEL).stem}.csv")
+# # df.to_csv(f"./models/{pathlib.Path(MODEL).stem}.csv")
 
-### Accuracy Breakdown ###
-# Control
-control = df[df.label == 0]
-control_acc = sum(control.correct)/len(control)
-# MCI
-mci = df[df.label == 1]
-mci_acc = sum(mci.correct)/len(mci)
-# Dementia
-dementia = df[df.label == 2]
-dementia_acc = sum(dementia.correct)/len(dementia)
+# ### Accuracy Breakdown ###
+# # Control
+# control = df[df.label == 0]
+# control_acc = sum(control.correct)/len(control)
+# # MCI
+# mci = df[df.label == 1]
+# mci_acc = sum(mci.correct)/len(mci)
+# # Dementia
+# dementia = df[df.label == 2]
+# dementia_acc = sum(dementia.correct)/len(dementia)
 
-df.groupby(round(df.feature_percent, 1)).mean()
+# df.groupby(round(df.feature_percent, 1)).mean()
 
-def read_attention(mod, inp, out):
-    print(out)
-    return out
+# def read_attention(mod, inp, out):
+#     print(out)
+#     return out
 
-tmp = pd.Series([-0.6017, -1.4213, -0.1744, -0.7487,  3.9498,  5.5751, -4.4889, -2.1936,
-       -3.6340,  0.1321,  1.3879,  3.3084,  5.8068, -0.6585, -1.5083,  0.8317,
-       0.8723,  3.7855,  4.4545,  4.4564, -1.7827, -1.1391, -5.1701, -3.4897,
-       -1.2304, -3.1686, -2.0418,  2.1061,  7.9796, -0.7690,  1.9104, -5.3666,
-       0.4209, -2.5557, -1.9161, -2.4140, -0.4391, -1.0187, -1.9612, -2.4329,
-       5.6491,  5.4506,  4.3944, -0.5510,  3.0210, -5.3870,  5.9335, -1.9257,
-       6.9999,  5.5075, -5.2941,  3.9323,  0.0622, -2.2690,  5.3083,  2.5578,
-       3.0858,  1.7683,  5.7945,  5.2832,  5.2984,  2.9409, -0.5184,  8.4684,
-       4.3989,  3.9700,  3.7639,  0.4790,  8.1474,  1.1683, -0.9344, -6.2655,
-       -1.6892, -0.4481, -0.5459, -2.6126, -1.8289,  1.8540,  3.0106, -1.8860,
-       -1.1338, -2.3526, -2.2765, -3.0212, -2.4682, -2.4467, -2.2888, -3.1426,
-       -2.6542, -2.0798, -1.5492, -1.1480, -2.1481, -4.5286, -1.4182, -0.4367,
-       -2.1292, -3.6011, -3.7934, -2.4401, -2.5840, -2.7806, -1.9196])
-
-
-
-hook = model.encoder.layers[0].self_attn.register_forward_hook(read_attention)
-
-i = dataset[30] 
-
-# pass through the model
-inp = [j.unsqueeze(0).to(DEVICE) for j in i]
-oup = model(*inp)
-
-hook.remove()
+# tmp = pd.Series([-0.6017, -1.4213, -0.1744, -0.7487,  3.9498,  5.5751, -4.4889, -2.1936,
+#        -3.6340,  0.1321,  1.3879,  3.3084,  5.8068, -0.6585, -1.5083,  0.8317,
+#        0.8723,  3.7855,  4.4545,  4.4564, -1.7827, -1.1391, -5.1701, -3.4897,
+#        -1.2304, -3.1686, -2.0418,  2.1061,  7.9796, -0.7690,  1.9104, -5.3666,
+#        0.4209, -2.5557, -1.9161, -2.4140, -0.4391, -1.0187, -1.9612, -2.4329,
+#        5.6491,  5.4506,  4.3944, -0.5510,  3.0210, -5.3870,  5.9335, -1.9257,
+#        6.9999,  5.5075, -5.2941,  3.9323,  0.0622, -2.2690,  5.3083,  2.5578,
+#        3.0858,  1.7683,  5.7945,  5.2832,  5.2984,  2.9409, -0.5184,  8.4684,
+#        4.3989,  3.9700,  3.7639,  0.4790,  8.1474,  1.1683, -0.9344, -6.2655,
+#        -1.6892, -0.4481, -0.5459, -2.6126, -1.8289,  1.8540,  3.0106, -1.8860,
+#        -1.1338, -2.3526, -2.2765, -3.0212, -2.4682, -2.4467, -2.2888, -3.1426,
+#        -2.6542, -2.0798, -1.5492, -1.1480, -2.1481, -4.5286, -1.4182, -0.4367,
+#        -2.1292, -3.6011, -3.7934, -2.4401, -2.5840, -2.7806, -1.9196])
 
 
 
-with open("./neuralpsych", 'r') as df:
-    lines = df.readlines()
-    features = [i.strip() for i in lines]
+# hook = model.encoder.layers[0].self_attn.register_forward_hook(read_attention)
 
-# features
-tmp = tmp*(1-(i[1].float())).numpy()
-tmp
+# i = dataset[30] 
 
+# # pass through the model
+# inp = [j.unsqueeze(0).to(DEVICE) for j in i]
+# oup = model(*inp)
 
-zipped_attention = list(zip(features, [i.item() for i in inp[0].squeeze()], tmp))
-
-tmp2 = pd.DataFrame(zipped_attention)
-
-print(tmp2.to_string())
-
-i[2]
-
-tmp2.columns=["feature", "data", "attention"]
-tmp2[tmp2["attention"]==0].loc[:,"attention"] = 0
-tmp2
-tmp2.to_csv("attention_control.csv")
-tmp2[tmp2["attention"] == 0]
-
-i[2]
+# hook.remove()
 
 
-zipped_attention
+
+# with open("./neuralpsych", 'r') as df:
+#     lines = df.readlines()
+#     features = [i.strip() for i in lines]
+
+# # features
+# tmp = tmp*(1-(i[1].float())).numpy()
+# tmp
+
+
+# zipped_attention = list(zip(features, [i.item() for i in inp[0].squeeze()], tmp))
+
+# tmp2 = pd.DataFrame(zipped_attention)
+
+# print(tmp2.to_string())
+
+# i[2]
+
+# tmp2.columns=["feature", "data", "attention"]
+# tmp2[tmp2["attention"]==0].loc[:,"attention"] = 0
+# tmp2
+# tmp2.to_csv("attention_control.csv")
+# tmp2[tmp2["attention"] == 0]
+
+# i[2]
+
+
+# zipped_attention

@@ -11,3 +11,6 @@ wandb
 /attention_dementia.csv
 /attention_mci.csv
 /*.py#
+/figures/
+/testing/#transformer_validate.py#
+/testing/.DS_Store
