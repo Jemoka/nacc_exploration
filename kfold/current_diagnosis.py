@@ -256,6 +256,8 @@ for i in tqdm(range(0, len(VALIDATION_SET[0]), BATCH_SIZE)):
     logits = torch.cat((output["logits"].cpu(), logits), dim=0)
     labels = torch.cat((set[2].cpu(), labels), dim=0)
 
+    torch.cuda.empty_cache()
+
 try:
     prec_recc, roc, cm, acc = tensor_metrics(logits, labels)
     run.log({"val_loss": output["loss"].detach().cpu().item(),
