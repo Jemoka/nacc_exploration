@@ -195,6 +195,7 @@ class NACCCurrentDataset(Dataset):
 
 dataset = NACCCurrentDataset("../investigator_nacc57.csv", "../features/combined", fold=FOLD)
 VALIDATION_SET = [i.to(DEVICE) for i in dataset.val()]
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 model = NACCModel(dataset._num_features, 3).to(DEVICE)
 optimizer = AdamW(model.parameters(), lr=LR)
