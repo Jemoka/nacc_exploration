@@ -194,7 +194,7 @@ class NACCCurrentDataset(Dataset):
         return len(self.data)
 
 dataset = NACCCurrentDataset("../investigator_nacc57.csv", "../features/combined", fold=FOLD)
-VALIDATION_SET = [i.to(DEVICE) for i in dataset.val()]
+VALIDATION_SET = dataset.val()
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 model = NACCModel(dataset._num_features, 3).to(DEVICE)
@@ -249,7 +249,7 @@ print("Validating...")
 
 # validation is large, so we do batches
 for i in tqdm(range(0, len(VALIDATION_SET[0]), BATCH_SIZE)):
-    set = [j[i:i+BATCH_SIZE] for j in VALIDATION_SET]
+    set = [j[i:i+BATCH_SIZE].to(DEVICE) for j in VALIDATION_SET]
     output = model(*set)
 
     # append to talley
