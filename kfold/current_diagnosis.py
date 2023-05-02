@@ -15,6 +15,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
 from sklearn.metrics import precision_recall_fscore_support
+from sklearn.model_selection import KFold
 
 # nicies
 from tqdm import tqdm
