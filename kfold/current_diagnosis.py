@@ -9,6 +9,8 @@ import pandas as pd
 
 import wandb
 
+import functools
+
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
