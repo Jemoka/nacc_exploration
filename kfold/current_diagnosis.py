@@ -91,7 +91,6 @@ class NACCCurrentDataset(Dataset):
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
-
         # Get a list of participants
         participants = self.raw_data["NACCID"]
 
@@ -108,11 +107,13 @@ class NACCCurrentDataset(Dataset):
         participants = self.raw_data.index.get_level_values(0)
 
         kf = KFold(n_splits=10, random_state=7, shuffle=True)
-        splits = kf.split(participants)
+
+        participant_set = pd.Series(list(set(participants)))
+        splits = kf.split(participant_set)
         train_ids, test_ids = list(splits)[fold]
 
-        train_participants = participants[train_ids]
-        test_participants = participants[test_ids]
+        train_participants = participant_set[train_ids]
+        test_participants = participant_set[test_ids]
 
         # shuffle
         self.raw_data = self.raw_data.sample(frac=1)
@@ -133,7 +134,6 @@ class NACCCurrentDataset(Dataset):
 
         self.data = self.data.loc[train_participants]
         self.targets = self.targets.loc[train_participants]
-
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
@@ -196,6 +196,10 @@ class NACCCurrentDataset(Dataset):
         return len(self.data)
 
 dataset = NACCCurrentDataset("../investigator_nacc57.csv", "../features/combined", fold=FOLD)
+breakpoint()
+
+len(dataset)
+
 validation_set = TensorDataset(*dataset.val())
 validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE)
 
