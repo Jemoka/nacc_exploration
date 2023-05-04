@@ -196,9 +196,6 @@ class NACCCurrentDataset(Dataset):
         return len(self.data)
 
 dataset = NACCCurrentDataset("../investigator_nacc57.csv", "../features/combined", fold=FOLD)
-breakpoint()
-
-len(dataset)
 
 validation_set = TensorDataset(*dataset.val())
 validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE)
