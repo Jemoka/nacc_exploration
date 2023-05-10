@@ -7,11 +7,13 @@ from torch.optim import AdamW
 import numpy as np
 import pandas as pd
 
+import gc
+
 import wandb
 
 import functools
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 from torch.nn.utils.rnn import pad_sequence
 
 from sklearn.metrics import precision_recall_fscore_support
@@ -93,7 +95,6 @@ class NACCCurrentDataset(Dataset):
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
-
         # Get a list of participants
         participants = self.raw_data["NACCID"]
 
@@ -110,11 +111,13 @@ class NACCCurrentDataset(Dataset):
         participants = self.raw_data.index.get_level_values(0)
 
         kf = KFold(n_splits=10, random_state=7, shuffle=True)
-        splits = kf.split(participants)
+
+        participant_set = pd.Series(list(set(participants)))
+        splits = kf.split(participant_set)
         train_ids, test_ids = list(splits)[fold]
 
-        train_participants = participants[train_ids]
-        test_participants = participants[test_ids]
+        train_participants = participant_set[train_ids]
+        test_participants = participant_set[test_ids]
 
         # shuffle
         self.raw_data = self.raw_data.sample(frac=1)
@@ -203,8 +206,11 @@ class NACCCurrentDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-dataset = NACCCurrentDataset("../investigator_nacc57.csv", "../features/combined", fold=FOLD)
-VALIDATION_SET = dataset.val()
+dataset = NACCCurrentDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD)
+
+validation_set = TensorDataset(*dataset.val())
+validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE)
+
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 model = NACCModel(dataset._num_features, 3).to(DEVICE)
@@ -212,8 +218,8 @@ optimizer = AdamW(model.parameters(), lr=LR)
 
 # calculate the f1 from tensors
 def tensor_metrics(logits, labels):
-    label_indicies = torch.argmax(labels.cpu(), 1)
-    logits_indicies  = logits.detach().cpu()
+    label_indicies = np.argmax(labels, 1)
+    logits_indicies  = logits
 
     class_names = ["Control", "MCI", "Dementia"]
 
@@ -225,7 +231,7 @@ def tensor_metrics(logits, labels):
         class_names=class_names
     )
 
-    acc = sum(label_indicies == torch.argmax(logits_indicies, dim=1))/len(label_indicies)
+    acc = sum(label_indicies == np.argmax(logits_indicies, axis=1))/len(label_indicies)
 
     return pr_curve, roc, cm, acc
 
@@ -252,26 +258,24 @@ model.eval()
 
 # we track logits and labels and count them
 # finally together eventually
-logits = torch.empty(0,3).cpu()
-labels = torch.empty(0,3).cpu()
+logits = np.empty((0,3))
+labels = np.empty((0,3))
 
 print("Validating...")
 
 # validation is large, so we do batches
-for i in tqdm(range(0, len(VALIDATION_SET[0]), BATCH_SIZE)):
-    set = [j[i:i+BATCH_SIZE].to(DEVICE) for j in VALIDATION_SET]
-    output = model(*set)
+for i in tqdm(iter(validation_loader)):
+    output = model(*[j.to(DEVICE) for j in i])
 
     # append to talley
-    logits = torch.cat((output["logits"].cpu(), logits), dim=0)
-    labels = torch.cat((set[2].cpu(), labels), dim=0)
+    logits = np.append(logits, output["logits"].detach().cpu().numpy(), 0)
+    labels = np.append(labels, i[2].numpy(), 0)
 
     torch.cuda.empty_cache()
 
 try:
     prec_recc, roc, cm, acc = tensor_metrics(logits, labels)
-    run.log({"val_loss": output["loss"].detach().cpu().item(),
-             "val_prec_recc": prec_recc,
+    run.log({"val_prec_recc": prec_recc,
              "val_confusion": cm,
              "val_roc": roc,
              "val_acc": acc})
