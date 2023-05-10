@@ -36,8 +36,16 @@ CONFIG = {
     "task": "current"
 }
 
-# run = wandb.init(project="nacc-kfold", entity="jemoka", config=CONFIG)
-run = wandb.init(project="nacc-kfold", entity="jemoka", config=CONFIG, mode="disabled")
+ONE_SHOT = True
+# ONE_SHOT = False
+ONLINE = False
+# ONLINE = TRUE
+
+if ONE_SHOT:
+    run = wandb.init(project="nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
+else:
+    run = wandb.init(project="nacc-kfold", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
+
 config = run.config
 
 BATCH_SIZE = 32
@@ -82,10 +90,6 @@ class NACCCurrentDataset(Dataset):
         with open(feature_path, 'r') as df:
             lines = df.readlines()
             self.features = [i.strip() for i in lines]
-
-        # basic dataaug
-        if emph:
-            self.raw_data = pd.concat([self.raw_data, self.raw_data[self.raw_data[target_feature]==emph]])
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
@@ -132,6 +136,12 @@ class NACCCurrentDataset(Dataset):
         self.data = self.data.loc[train_participants]
         self.targets = self.targets.loc[train_participants]
 
+        # basic dataaug
+        if emph:
+            emph_features = self.targets[target_feature]==emph
+
+            self.data = pd.concat([self.data, self.data[emph_features]])
+            self.targets = pd.concat([self.targets, self.targets[emph_features]])
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
