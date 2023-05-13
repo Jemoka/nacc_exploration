@@ -41,7 +41,7 @@ CONFIG = {
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-# ONLINE = TRUE
+# ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
