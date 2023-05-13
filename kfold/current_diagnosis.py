@@ -240,6 +240,7 @@ for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
     for i, batch in tqdm(enumerate(iter(dataloader)), total=len(dataloader)):
+        batchp = batch
         # send batch to GPU if needed
         batch = [i.to(DEVICE) for i in batch]
 
