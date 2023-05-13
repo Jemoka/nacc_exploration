@@ -55,7 +55,7 @@ EPOCHS = 64
 LR = 0.0001
 NHEAD = 8
 NLAYERS = 8
-HIDDEN = 2048
+HIDDEN = 1024
 FOLD = config.fold
 FEATURESET = config.featureset
 
