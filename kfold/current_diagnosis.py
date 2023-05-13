@@ -52,7 +52,7 @@ config = run.config
 
 BATCH_SIZE = 64
 EPOCHS = 64
-LR = 0.00005
+LR = 0.00001
 NHEAD = 8
 NLAYERS = 8
 HIDDEN = 1024
