@@ -50,7 +50,7 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 EPOCHS = 64
 LR = 0.00001
 NHEAD = 8

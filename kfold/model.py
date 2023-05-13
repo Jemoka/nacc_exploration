@@ -25,6 +25,7 @@ class NACCModel(nn.Module):
 
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)
+        self.norm = nn.BatchNorm1d(hidden)
         self.gelu = nn.GELU()
         self.linear2 = nn.Linear(hidden, num_classes)
         self.softmax = nn.Softmax(1)
@@ -41,6 +42,7 @@ class NACCModel(nn.Module):
         net = self.flatten(net)
         net = self.linear1(net)
         net = self.gelu(net)
+        net = self.norm(net)
         net = self.linear2(net)
         net = self.dropout(net)
         net = self.softmax(net)
