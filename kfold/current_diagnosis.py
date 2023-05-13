@@ -247,7 +247,10 @@ for epoch in range(EPOCHS):
         output = model(*batch)
 
         # backprop
-        output["loss"].backward()
+        try:
+            output["loss"].backward()
+        except RuntimeError:
+            breakpoint()
         optimizer.step()
         optimizer.zero_grad()
 
