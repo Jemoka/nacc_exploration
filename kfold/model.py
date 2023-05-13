@@ -21,7 +21,7 @@ class NACCModel(nn.Module):
         self.flatten = nn.Flatten()
 
         # dropoutp!
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(0.2)
 
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)

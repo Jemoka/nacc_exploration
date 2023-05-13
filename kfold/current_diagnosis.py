@@ -51,11 +51,11 @@ else:
 config = run.config
 
 BATCH_SIZE = 32
-EPOCHS = 128
-LR = 0.00001
+EPOCHS = 64
+LR = 0.0001
 NHEAD = 8
-NLAYERS = 6
-HIDDEN=256
+NLAYERS = 8
+HIDDEN = 512
 FOLD = config.fold
 FEATURESET = config.featureset
 
