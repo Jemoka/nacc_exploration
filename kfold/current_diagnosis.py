@@ -141,7 +141,7 @@ class NACCCurrentDataset(Dataset):
 
         # basic dataaug
         if emph:
-            emph_features = self.targets[target_feature]==emph
+            emph_features = self.targets==emph
 
             self.data = pd.concat([self.data, self.data[emph_features]])
             self.targets = pd.concat([self.targets, self.targets[emph_features]])
