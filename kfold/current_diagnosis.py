@@ -51,11 +51,11 @@ else:
 config = run.config
 
 BATCH_SIZE = 32
-EPOCHS = 64
+EPOCHS = 95
 LR = 0.00001
 NHEAD = 8
 NLAYERS = 8
-HIDDEN = 1024
+HIDDEN = 2048
 FOLD = config.fold
 FEATURESET = config.featureset
 
@@ -143,8 +143,11 @@ class NACCCurrentDataset(Dataset):
         if emph:
             emph_features = self.targets==emph
 
-            self.data = pd.concat([self.data, self.data[emph_features]])
-            self.targets = pd.concat([self.targets, self.targets[emph_features]])
+            ordering = len(self.data)
+            order = random.sample(range(ordering), ordering)
+
+            self.data = pd.concat([self.data, self.data[emph_features]]).iloc[order]
+            self.targets = pd.concat([self.targets, self.targets[emph_features]]).iloc[order]
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
