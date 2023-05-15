@@ -19,6 +19,10 @@ from torch.nn.utils.rnn import pad_sequence
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.model_selection import KFold
 
+# import tqdm auto
+from tqdm.auto import tqdm
+tqdm.pandas()
+
 # nicies
 from tqdm import tqdm
 
@@ -31,6 +35,7 @@ import random
 # model
 from model import NACCModel
 from datasets import *
+
 
 CONFIG = {
     "fold": 0,
