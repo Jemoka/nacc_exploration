@@ -84,7 +84,7 @@ if TASK == "current":
     model = NACCModel(dataset._num_features, 3).to(DEVICE)
 elif TASK == "future":
     # load model
-    model = torch.load(os.path.join(MODEL, "model.save"),
+    model = torch.load(os.path.join("models", MODEL, "model.save"),
                        map_location=DEVICE).to(DEVICE)
 else:
     raise Exception("Weird task heh.")
