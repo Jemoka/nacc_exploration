@@ -25,6 +25,7 @@ import glob
 import math
 import random
 
+bound=(1,3)
 
 # loading data
 class NACCCurrentDataset(Dataset):
