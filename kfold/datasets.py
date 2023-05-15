@@ -303,13 +303,18 @@ class NACCFutureDataset(Dataset):
         self.targets = raw_data_sample["ultimate_diag_type"]
 
         # then isolate the daata
-        self.data = self.raw_data[self.features] 
+        self.data = raw_data_sample[self.features] 
 
         # store the traget indicies
         self.__target_indicies = target_indicies
 
         # get number of features, by hoisting the get function up and getting length
         self._num_features = len(self.features)
+
+        # get the actual intersections remaining
+        current_participants = self.data.index.get_level_values(0)
+        test_participants = current_participants.intersection(test_participants)
+        train_participants = current_participants.intersection(train_participants)
 
         # crop the data for validatino
         self.val_data = self.data.loc[test_participants]
