@@ -1,3 +1,6 @@
+from torch import nn
+import torch
+
 # the transformer network
 class NACCModel(nn.Module):
 
