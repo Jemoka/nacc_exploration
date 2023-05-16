@@ -29,7 +29,8 @@ import math
 import random
 
 # model
-from model import NACCModel
+# from model import NACCModel
+from model_legacy import NACCModel
 
 
 CONFIG = {
