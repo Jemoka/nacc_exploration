@@ -33,8 +33,8 @@ import math
 import random
 
 # model
-# from model import NACCModel
-from model_legacy import NACCModel
+from model import NACCModel
+# from model_legacy import NACCModel
 from datasets import *
 
 
