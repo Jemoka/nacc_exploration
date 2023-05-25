@@ -15,6 +15,7 @@ import functools
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 
 from sklearn.model_selection import KFold
+from sklearn.utils import shuffle
 
 # nicies
 from tqdm import tqdm
@@ -32,8 +33,7 @@ class NACCCurrentDataset(Dataset):
 
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_feature="NACCUDSD", target_indicies=[1,3,4],
-                 emph=3, fold=0):
+                 target_feature="NACCUDSD", target_indicies=[1,3,4], fold=0):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -43,7 +43,6 @@ class NACCCurrentDataset(Dataset):
         [target_feature] (str): the name of feature to serve as the target
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
-        [emph] (int): the index to emphasize 
         [fold] (int): the n-th fold to select
         """
 
@@ -74,18 +73,14 @@ class NACCCurrentDataset(Dataset):
 
         # k fold
         participants = self.raw_data.index.get_level_values(0)
+        participants = shuffle(participants)
 
-        kf = KFold(n_splits=10, random_state=7, shuffle=True)
+        self.raw_data = self.raw_data.loc[participants] 
 
-        participant_set = pd.Series(list(set(participants)))
-        splits = kf.split(participant_set)
+        kf = KFold(n_splits=10)
+
+        splits = kf.split(self.raw_data)
         train_ids, test_ids = list(splits)[fold]
-
-        train_participants = participant_set[train_ids]
-        test_participants = participant_set[test_ids]
-
-        # shuffle
-        self.raw_data = self.raw_data.sample(frac=1)
 
         # Calculate the target data
         self.targets = self.raw_data[target_feature]
@@ -98,21 +93,11 @@ class NACCCurrentDataset(Dataset):
         self._num_features = len(self.features)
 
         # crop the data for validatino
-        self.val_data = self.data.loc[test_participants]
-        self.val_targets = self.targets.loc[test_participants]
+        self.val_data = self.data.iloc[test_ids]
+        self.val_targets = self.targets.iloc[test_ids]
 
-        self.data = self.data.loc[train_participants]
-        self.targets = self.targets.loc[train_participants]
-
-        # basic dataaug
-        if emph:
-            emph_features = self.targets==emph
-
-            ordering = len(self.data)
-            order = random.sample(range(ordering), ordering)
-
-            self.data = pd.concat([self.data, self.data[emph_features]]).iloc[order]
-            self.targets = pd.concat([self.targets, self.targets[emph_features]]).iloc[order]
+        self.data = self.data.iloc[train_ids]
+        self.targets = self.targets.iloc[train_ids]
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
@@ -219,18 +204,6 @@ class NACCFutureDataset(Dataset):
         index_multi = pd.MultiIndex.from_tuples(index_participant_correlated, names=["Participant ID", "Entry ID"])
         self.raw_data.index = index_multi
 
-        # k fold
-        participants = self.raw_data.index.get_level_values(0)
-
-        kf = KFold(n_splits=10, random_state=7, shuffle=True)
-
-        participant_set = pd.Series(list(set(participants)))
-        splits = kf.split(participant_set)
-        train_ids, test_ids = list(splits)[fold]
-
-        train_participants = participant_set[train_ids]
-        test_participants = participant_set[test_ids]
-
         raw_data = self.raw_data
 
 
@@ -299,6 +272,17 @@ class NACCFutureDataset(Dataset):
         # shuffle again and sample based on median size
         raw_data_sample =  raw_data_sample.sample(frac=1)
 
+        # k fold
+        participants = raw_data_sample.index.get_level_values(0)
+        participants = shuffle(participants)
+
+        raw_data_sample = raw_data_sample.loc[participants] 
+
+        kf = KFold(n_splits=10)
+
+        splits = kf.split(raw_data_sample)
+        train_ids, test_ids = list(splits)[fold]
+
         # Calculate the target data. this is not trivial.
         self.targets = raw_data_sample["ultimate_diag_type"]
 
@@ -311,17 +295,12 @@ class NACCFutureDataset(Dataset):
         # get number of features, by hoisting the get function up and getting length
         self._num_features = len(self.features)
 
-        # get the actual intersections remaining
-        current_participants = self.data.index.get_level_values(0)
-        test_participants = current_participants.intersection(test_participants)
-        train_participants = current_participants.intersection(train_participants)
-
         # crop the data for validatino
-        self.val_data = self.data.loc[test_participants]
-        self.val_targets = self.targets.loc[test_participants]
+        self.val_data = self.data.iloc[test_ids]
+        self.val_targets = self.targets.iloc[test_ids]
 
-        self.data = self.data.loc[train_participants]
-        self.targets = self.targets.loc[train_participants]
+        self.data = self.data.iloc[train_ids]
+        self.targets = self.targets.iloc[train_ids]
 
     def __process(self, data, target, index=None):
         # the discussed dataprep

@@ -82,7 +82,7 @@ else:
     raise Exception("Weird task heh.")
 
 validation_set = TensorDataset(*dataset.val())
-validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE)
+validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=True)
 
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
