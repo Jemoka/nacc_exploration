@@ -75,7 +75,7 @@ class NACCCurrentDataset(Dataset):
         participants = self.raw_data.index.get_level_values(0)
         participants = shuffle(participants)
 
-        self.raw_data = self.raw_data.loc[participants] 
+        self.raw_data = self.raw_data.loc[list(set(participants))] 
 
         kf = KFold(n_splits=10)
 
@@ -276,7 +276,7 @@ class NACCFutureDataset(Dataset):
         participants = raw_data_sample.index.get_level_values(0)
         participants = shuffle(participants)
 
-        raw_data_sample = raw_data_sample.loc[participants] 
+        raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
         kf = KFold(n_splits=10)
 
