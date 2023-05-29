@@ -33,7 +33,8 @@ class NACCCurrentDataset(Dataset):
 
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_feature="NACCUDSD", target_indicies=[1,3,4], fold=0):
+                 target_feature="NACCUDSD", target_indicies=[1,3,4], fold=0,
+                 emph=3):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -44,6 +45,7 @@ class NACCCurrentDataset(Dataset):
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
         [fold] (int): the n-th fold to select
+        [emph] (int): emphasize a specific feature
         """
 
         # initialize superclass
@@ -59,6 +61,9 @@ class NACCCurrentDataset(Dataset):
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
+        if emph:
+            self.raw_data = pd.concat([self.raw_data, self.raw_data[self.raw_data[target_feature]==emph]])
+
         # Get a list of participants
         participants = self.raw_data["NACCID"]
 

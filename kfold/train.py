@@ -62,7 +62,7 @@ else:
 config = run.config
 
 BATCH_SIZE = 32
-EPOCHS = 95
+EPOCHS = 128
 LR = 0.00001
 NHEAD = 8
 NLAYERS = 8
