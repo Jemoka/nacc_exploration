@@ -82,7 +82,8 @@ class NACCCurrentDataset(Dataset):
 
         self.raw_data = self.raw_data.loc[list(set(participants))] 
 
-        kf = KFold(n_splits=10)
+        # TODO remove THE SHUFFLE TEST TEST TEST
+        kf = KFold(n_splits=10, shuffle=True)
 
         splits = kf.split(self.raw_data)
         train_ids, test_ids = list(splits)[fold]
