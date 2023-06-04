@@ -61,8 +61,8 @@ class NACCCurrentDataset(Dataset):
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
-        if emph:
-            self.raw_data = pd.concat([self.raw_data, self.raw_data[self.raw_data[target_feature]==emph]])
+        # if emph:
+        #     self.raw_data = pd.concat([self.raw_data, self.raw_data[self.raw_data[target_feature]==emph]])
 
         # Get a list of participants
         participants = self.raw_data["NACCID"]
