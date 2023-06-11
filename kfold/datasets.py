@@ -61,8 +61,6 @@ class NACCCurrentDataset(Dataset):
 
         # skip elements whose target is not in the list
         self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
-        # if emph:
-        #     self.raw_data = pd.concat([self.raw_data, self.raw_data[self.raw_data[target_feature]==emph]])
 
         # Get a list of participants
         participants = self.raw_data["NACCID"]
@@ -105,6 +103,11 @@ class NACCCurrentDataset(Dataset):
         self.data = self.data.iloc[train_ids]
         self.targets = self.targets.iloc[train_ids]
 
+        if emph:
+            to_emph = (self.targets == emph)
+            self.targets = pd.concat([self.targets, self.targets[to_emph]])
+            self.data = pd.concat([self.data, self.data[to_emph]])
+
     def __process(self, data, target, index=None):
         # the discussed dataprep
         # if a data entry is <0 or >80, it is "not found"
@@ -113,7 +116,7 @@ class NACCCurrentDataset(Dataset):
         data_found = (data > 80) | (data < 0)
         data[data_found] = 0
         # then, the found-ness becomes a mask
-        data_found_mask = (data_found)
+        data_found_mask = data_found
 
         # if it is a sample with no tangible data
         # well give up and get another sample:
