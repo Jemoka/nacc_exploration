@@ -28,24 +28,27 @@ import random
 
 bound=(1,3)
 
+# a = pd.read_csv("../investigator_nacc57.csv")
+# len(a[a.NACCETPR == 88])
+# len(a[(a.NACCETPR == 1) & (a.DEMENTED == 1)])
+# len(a[(a.NACCETPR == 1) & (a.NACCTMCI == 1)])
+# len(a[(a.NACCETPR == 1) & (a.NACCTMCI == 2)])
+
 # loading data
 class NACCCurrentDataset(Dataset):
 
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_feature="NACCUDSD", target_indicies=[1,3,4], fold=0,
-                 emph=3):
+                 target_indicies=[1,3,4], fold=0):
         """The NeuralPsycology Dataset
 
         Arguments:
 
         file_path (str): path to the NACC csv
         feature_path (str): path to a text file with the input features to scean
-        [target_feature] (str): the name of feature to serve as the target
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
         [fold] (int): the n-th fold to select
-        [emph] (int): emphasize a specific feature
         """
 
         # initialize superclass
@@ -58,9 +61,6 @@ class NACCCurrentDataset(Dataset):
         with open(feature_path, 'r') as df:
             lines = df.readlines()
             self.features = [i.strip() for i in lines]
-
-        # skip elements whose target is not in the list
-        self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
 
         # Get a list of participants
         participants = self.raw_data["NACCID"]
@@ -80,7 +80,35 @@ class NACCCurrentDataset(Dataset):
 
         self.raw_data = self.raw_data.loc[list(set(participants))] 
 
-        # TODO remove THE SHUFFLE TEST TEST TEST
+        # synthesize the target feature
+        target_feature="target_feature"
+        self.raw_data.loc[:, "target_feature"] = -1
+        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 88)&
+                                               (self.raw_data.DEMENTED == 0)] = target_indicies[0]
+        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
+                                               (self.raw_data.DEMENTED == 1)] = target_indicies[2]
+        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
+                                               (self.raw_data.DEMENTED == 0)&
+                                               ((self.raw_data.NACCTMCI == 1) |
+                                                (self.raw_data.NACCTMCI == 2))] = target_indicies[1]
+        # filter fort the correct target features
+        self.raw_data = self.raw_data[self.raw_data.target_feature != -1] 
+
+        # disproportionally sample the data w.r.t. the relationships
+        control_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[0]])
+        mci_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[1]])
+        dementia_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[2]])
+
+        sample_size = min(control_cases, mci_cases, dementia_cases)
+
+        # and the sample the correct pieces
+        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size)
+        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size)
+        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size)
+
+        # get the porportional weights
+        self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
+
         kf = KFold(n_splits=10, shuffle=True)
 
         splits = kf.split(self.raw_data)
@@ -102,11 +130,6 @@ class NACCCurrentDataset(Dataset):
 
         self.data = self.data.iloc[train_ids]
         self.targets = self.targets.iloc[train_ids]
-
-        if emph:
-            to_emph = (self.targets == emph)
-            self.targets = pd.concat([self.targets, self.targets[to_emph]])
-            self.data = pd.concat([self.data, self.data[to_emph]])
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
@@ -174,7 +197,7 @@ class NACCFutureDataset(Dataset):
 
     def __init__(self, file_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_feature="NACCUDSD", target_indicies=[1,3,4],
+                 target_indicies=[1,3,4],
                  fold=0):
         """The NeuralPsycology Dataset
 
@@ -199,8 +222,6 @@ class NACCFutureDataset(Dataset):
             lines = df.readlines()
             self.features = [i.strip() for i in lines]
 
-        # skip elements whose target is not in the list
-        self.raw_data = self.raw_data[self.raw_data[target_feature].isin(target_indicies)] 
         # Get a list of participants
         participants = self.raw_data["NACCID"]
 
@@ -371,3 +392,6 @@ class NACCFutureDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+
+d = NACCCurrentDataset("../investigator_nacc57.csv",
+                       "../features/anamnesis")
