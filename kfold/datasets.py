@@ -108,6 +108,7 @@ class NACCCurrentDataset(Dataset):
 
         # get the porportional weights
         self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
+        self.raw_data = self.raw_data.sample(frac=1)
 
         kf = KFold(n_splits=10, shuffle=True)
 
@@ -393,5 +394,7 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 
-d = NACCCurrentDataset("../investigator_nacc57.csv",
-                       "../features/anamnesis")
+# d = NACCCurrentDataset("../investigator_nacc57.csv",
+#                        "../features/anamnesis")
+# d[18]
+
