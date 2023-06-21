@@ -26,6 +26,8 @@ import glob
 import math
 import random
 
+tqdm.pandas()
+
 bound=(1,3)
 
 # a = pd.read_csv("../investigator_nacc57.csv")
@@ -235,11 +237,40 @@ class NACCFutureDataset(Dataset):
         index_multi = pd.MultiIndex.from_tuples(index_participant_correlated, names=["Participant ID", "Entry ID"])
         self.raw_data.index = index_multi
 
+
+        target_feature="target_feature"
+        self.raw_data.loc[:, "target_feature"] = -1
+        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 88)&
+                                               (self.raw_data.DEMENTED == 0)] = target_indicies[0]
+        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
+                                               (self.raw_data.DEMENTED == 1)] = target_indicies[2]
+        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
+                                               (self.raw_data.DEMENTED == 0)&
+                                               ((self.raw_data.NACCTMCI == 1) |
+                                                (self.raw_data.NACCTMCI == 2))] = target_indicies[1]
+        # filter fort the correct target features
+        self.raw_data = self.raw_data[self.raw_data.target_feature != -1] 
+
+        # disproportionally sample the data w.r.t. the relationships
+        control_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[0]])
+        mci_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[1]])
+        dementia_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[2]])
+
+        sample_size = min(control_cases, mci_cases, dementia_cases)
+
+        # and the sample the correct pieces
+        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size)
+        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size)
+        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size)
+
+        # get the porportional weights
+        self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
+        self.raw_data = self.raw_data.sample(frac=1)
+
         raw_data = self.raw_data
 
-
         # cosntruct a "diagnosis-in-nyears" column
-        age_date_data = raw_data[["NACCUDSD", "NACCAGE"]]
+        age_date_data = raw_data[["target_feature", "NACCAGE"]]
 
         max_age_plus_fifty = max(raw_data.NACCAGE)+50
 
@@ -250,8 +281,8 @@ class NACCFutureDataset(Dataset):
             """
 
             # get dementia indicies
-            mci_indicies = grp[(grp.NACCUDSD==3)]
-            dementia_indicies = grp[(grp.NACCUDSD==4)]
+            mci_indicies = grp[(grp.target_feature==3)]
+            dementia_indicies = grp[(grp.target_feature==4)]
 
             # store demented
             ultimate_diag_type = (3 if(len(mci_indicies)) else 1) if (len(dementia_indicies) == 0) else 4
@@ -394,7 +425,7 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 
-# d = NACCCurrentDataset("../investigator_nacc57.csv",
+# d = NACCFutureDataset("../investigator_nacc57.csv",
 #                        "../features/anamnesis")
-# d[18]
+# len(d)
 
