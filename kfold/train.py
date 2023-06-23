@@ -125,7 +125,10 @@ for epoch in range(EPOCHS):
         batch = [i.to(DEVICE) for i in batch]
 
         # run with actual backprop
-        output = model(*batch)
+        try:
+            output = model(*batch)
+        except ValueError:
+            breakpoint()
 
         # backprop
         try:
