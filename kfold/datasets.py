@@ -340,7 +340,7 @@ class NACCFutureDataset(Dataset):
 
         raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
-        kf = KFold(n_splits=10)
+        kf = KFold(n_splits=10, shuffle=True)
 
         splits = kf.split(raw_data_sample)
         train_ids, test_ids = list(splits)[fold]
