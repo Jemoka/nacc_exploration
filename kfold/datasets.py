@@ -414,7 +414,7 @@ class NACCFutureDataset(Dataset):
             try:
                 dataset.append(self.__process(self.val_data.iloc[index].copy(),
                                             self.val_targets.iloc[index].copy()))
-            except ValueError:
+            except:
                 continue # all zero ignore
 
         # return parts
