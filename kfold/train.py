@@ -115,7 +115,7 @@ def tensor_metrics(logits, labels):
 
     return pr_curve, roc, cm, acc
 
-model.train()
+# model.train()
 for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
@@ -141,7 +141,7 @@ for epoch in range(EPOCHS):
         # logging
         run.log({"loss": output["loss"].detach().cpu().item()})
 
-model.eval()
+# model.eval()
 
 # we track logits and labels and count them
 # finally together eventually
@@ -176,3 +176,5 @@ os.mkdir(f"./models/{run.name}")
 torch.save(model, f"./models/{run.name}/model.save")
 torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
+
+breakpoint()
