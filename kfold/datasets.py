@@ -335,10 +335,10 @@ class NACCFutureDataset(Dataset):
         raw_data_sample =  raw_data_sample.sample(frac=1)
 
         # k fold
-        participants = raw_data_sample.index.get_level_values(0)
-        participants = shuffle(participants)
+        # participants = raw_data_sample.index.get_level_values(0)
+        # participants = shuffle(participants)
 
-        raw_data_sample = raw_data_sample.loc[list(set(participants))] 
+        # raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
         kf = KFold(n_splits=10, shuffle=True)
 
