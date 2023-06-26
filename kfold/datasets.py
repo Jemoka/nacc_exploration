@@ -350,7 +350,8 @@ class NACCFutureDataset(Dataset):
         self.targets = raw_data_sample["ultimate_diag_type"]
 
         # then isolate the daata
-        self.data = raw_data_sample[self.features] 
+        # TODO TODO TODO TODO TODO
+        self.data = raw_data_sample[self.features+["target_feature"]] 
 
         # store the traget indicies
         self.__target_indicies = target_indicies
