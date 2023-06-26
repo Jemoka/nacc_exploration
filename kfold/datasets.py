@@ -148,7 +148,6 @@ class NACCCurrentDataset(Dataset):
         # well give up and get another sample:
         if sum(~data_found_mask) == 0:
             if not index:
-                breakpoint()
                 raise ValueError("All-Zero found in validation!")
             indx = random.randint(2,5)
             if index-indx <= 0:
