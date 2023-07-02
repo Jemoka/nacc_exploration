@@ -25,6 +25,7 @@ import json
 import glob
 import math
 import random
+import pickle
 
 tqdm.pandas()
 
@@ -76,6 +77,13 @@ class NACCCurrentDataset(Dataset):
         index_multi = pd.MultiIndex.from_tuples(index_participant_correlated, names=["Participant ID", "Entry ID"])
         self.raw_data.index = index_multi
 
+        # TODO DELETE exclude validation participants
+        with open("./exlude.pkl", 'rb') as df:
+            exclude = pickle.load(df)
+
+        # filter them out
+        self.raw_data = self.raw_data[~self.raw_data.index.get_level_values(0).isin(exclude)]
+
         # k fold
         participants = self.raw_data.index.get_level_values(0)
         participants = shuffle(participants)
@@ -104,15 +112,15 @@ class NACCCurrentDataset(Dataset):
         sample_size = min(control_cases, mci_cases, dementia_cases)
 
         # and the sample the correct pieces
-        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size)
-        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size)
-        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size)
+        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size, random_state=7)
+        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size, random_state=7)
+        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size, random_state=7)
 
         # get the porportional weights
         self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
-        self.raw_data = self.raw_data.sample(frac=1)
+        self.raw_data = self.raw_data.sample(frac=1, random_state=7)
 
-        kf = KFold(n_splits=10, shuffle=True)
+        kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
         splits = kf.split(self.raw_data)
         train_ids, test_ids = list(splits)[fold]
@@ -221,8 +229,8 @@ class NACCFutureDataset(Dataset):
         self.raw_data = pd.read_csv(file_path)
 
         # get the fature variables
-        with open(feature_path, 'r') as df:
-            lines = df.readlines()
+        with open(feature_path, 'r') as data_file:
+            lines = data_file.readlines()
             self.features = [i.strip() for i in lines]
 
         # Get a list of participants
@@ -259,13 +267,13 @@ class NACCFutureDataset(Dataset):
         sample_size = min(control_cases, mci_cases, dementia_cases)
 
         # and the sample the correct pieces
-        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size)
-        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size)
-        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size)
+        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size, random_state=7)
+        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size, random_state=7)
+        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size, random_state=7)
 
         # get the porportional weights
         self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
-        self.raw_data = self.raw_data.sample(frac=1)
+        self.raw_data = self.raw_data.sample(frac=1, random_state=7)
 
         raw_data = self.raw_data
 
@@ -322,17 +330,16 @@ class NACCFutureDataset(Dataset):
 
 
         # shuffle
-        raw_data_sample = raw_data.sample(frac=1)
+        raw_data_sample = raw_data.sample(frac=1, random_state=7)
         age_til_dementia_sample = raw_data_sample["age_til_dementia"]
         raw_data_sample = raw_data_sample[((age_til_dementia_sample>bound[0])&(age_til_dementia_sample<bound[1]))|(age_til_dementia_sample > 50)] # > 50 is control 
 
         # shuffle again and sample based on median size
         median_count = raw_data_sample.ultimate_diag_type.value_counts().median()
-        raw_data_sample = raw_data_sample.groupby("ultimate_diag_type").sample(n=int(median_count),
-                                                                            replace=True)
+        raw_data_sample = raw_data_sample.groupby("ultimate_diag_type").sample(n=int(median_count), replace=True, random_state=7)
 
         # shuffle again and sample based on median size
-        raw_data_sample =  raw_data_sample.sample(frac=1)
+        raw_data_sample =  raw_data_sample.sample(frac=1, random_state=7)
 
         # k fold
         # participants = raw_data_sample.index.get_level_values(0)
@@ -340,7 +347,7 @@ class NACCFutureDataset(Dataset):
 
         # raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
-        kf = KFold(n_splits=10, shuffle=True)
+        kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
         splits = kf.split(raw_data_sample)
         train_ids, test_ids = list(splits)[fold]
@@ -363,6 +370,10 @@ class NACCFutureDataset(Dataset):
 
         self.data = self.data.iloc[train_ids]
         self.targets = self.targets.iloc[train_ids]
+
+        # with open("exlude.pkl", 'rb') as data_file:
+        #     exclude = pickle.load(data_file)
+        #     val_participants = set(self.val_data.index.get_level_values(0))
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
@@ -426,6 +437,6 @@ class NACCFutureDataset(Dataset):
 
 
 # d = NACCFutureDataset("../investigator_nacc57.csv",
-#                        "../features/anamnesis")
+#                       "../features/anamnesis")
 # len(d)
 
