@@ -342,10 +342,10 @@ class NACCFutureDataset(Dataset):
         raw_data_sample =  raw_data_sample.sample(frac=1, random_state=7)
 
         # k fold
-        # participants = raw_data_sample.index.get_level_values(0)
-        # participants = shuffle(participants)
+        participants = raw_data_sample.index.get_level_values(0)
+        participants = shuffle(participants)
 
-        # raw_data_sample = raw_data_sample.loc[list(set(participants))] 
+        raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
@@ -372,6 +372,7 @@ class NACCFutureDataset(Dataset):
         self.targets = self.targets.iloc[train_ids]
 
         # with open("exlude.pkl", 'rb') as data_file:
+        #     breakpoint()
         #     exclude = pickle.load(data_file)
         #     val_participants = set(self.val_data.index.get_level_values(0))
 
@@ -436,7 +437,7 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 
-# d = NACCFutureDataset("../investigator_nacc57.csv",
-#                       "../features/anamnesis")
+d = NACCFutureDataset("../investigator_nacc57.csv",
+                      "../features/anamnesis")
 # len(d)
-
+# 
