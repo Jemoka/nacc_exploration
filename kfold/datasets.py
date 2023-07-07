@@ -345,8 +345,11 @@ class NACCFutureDataset(Dataset):
 
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
-        splits = kf.split(raw_data_sample.index.get_level_values(0))
+        participants = raw_data_sample.index.get_level_values(0)
+        splits = kf.split(participants)
         train_ids, test_ids = list(splits)[fold]
+        train_ids = participants[train_ids]
+        test_ids = participants[test_ids]
 
         # participants = 
         # participants = shuffle(participants)
@@ -439,6 +442,7 @@ class NACCFutureDataset(Dataset):
 
 
 # d = NACCFutureDataset("../investigator_nacc57.csv",
-#                       "../features/anamnesis")
-# # len(d)
-# # 
+                      # "../features/anamnesis")
+# len(d)
+# d[0]
+# 
