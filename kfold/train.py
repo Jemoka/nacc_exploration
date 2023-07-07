@@ -61,8 +61,8 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 32
-EPOCHS = 64
+BATCH_SIZE = 169
+EPOCHS = 32
 LR = 0.00001
 NHEAD = 8
 NLAYERS = 8
@@ -150,7 +150,8 @@ print("Validating...")
 
 # validation is large, so we do batches
 for i in tqdm(iter(validation_loader)):
-    output = model(*[j.to(DEVICE) for j in i])
+    batch = [j.to(DEVICE) for j in i]
+    output = model(batch[0].float(), batch[1], batch[2])
 
     # append to talley
     logits = np.append(logits, output["logits"].detach().cpu().numpy(), 0)
