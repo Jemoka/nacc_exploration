@@ -41,9 +41,9 @@ from datasets import *
 CONFIG = {
     "fold": 0,
     "featureset": "combined",
-    "task": "current",
-    "base": "firm-dream-113"
-    # "base": None
+    "task": "future",
+    # "base": "firm-dream-113"
+    "base": None
 }
 
 
@@ -86,14 +86,12 @@ validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=Tr
 
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-if TASK == "current":
+if not MODEL:
     model = NACCModel(dataset._num_features, 3).to(DEVICE)
-elif TASK == "future":
+else:
     # load model
     model = torch.load(os.path.join("models", MODEL, "model.save"),
                        map_location=DEVICE).to(DEVICE)
-else:
-    raise Exception("Weird task heh.")
 optimizer = AdamW(model.parameters(), lr=LR)
 
 # calculate the f1 from tensors
@@ -126,7 +124,7 @@ for epoch in range(EPOCHS):
 
         # run with actual backprop
         try:
-            output = model(*batch)
+            output = model(batch[0].float(), batch[1], batch[2])
         except ValueError:
             breakpoint()
 

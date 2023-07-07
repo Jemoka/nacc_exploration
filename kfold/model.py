@@ -11,7 +11,7 @@ class NACCModel(nn.Module):
         # the entry network ("linear embedding")
         # bigger than 80 means that its going to be out of bounds and therefore
         # be masked out; so hard code 81
-        self.embedding = nn.Embedding(81, hidden)
+        self.linear0 = nn.Linear(1, hidden)
         
         # the encoder network
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden, nhead=nhead)
@@ -35,7 +35,7 @@ class NACCModel(nn.Module):
 
     def forward(self, x, mask, labels=None):
 
-        net = self.embedding(x)
+        net = self.linear0(torch.unsqueeze(x, dim=2))
         # recall transformers are seq first
         net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
         net = self.dropout(net)
