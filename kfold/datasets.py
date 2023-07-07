@@ -342,15 +342,16 @@ class NACCFutureDataset(Dataset):
         raw_data_sample =  raw_data_sample.sample(frac=1, random_state=7)
 
         # k fold
-        participants = raw_data_sample.index.get_level_values(0)
-        participants = shuffle(participants)
-
-        raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
-        splits = kf.split(raw_data_sample)
+        splits = kf.split(raw_data_sample.index.get_level_values(0))
         train_ids, test_ids = list(splits)[fold]
+
+        # participants = 
+        # participants = shuffle(participants)
+
+        # raw_data_sample = raw_data_sample.loc[list(set(participants))] 
 
         # Calculate the target data. this is not trivial.
         self.targets = raw_data_sample["ultimate_diag_type"]
@@ -365,11 +366,11 @@ class NACCFutureDataset(Dataset):
         self._num_features = len(self.features)
 
         # crop the data for validatino
-        self.val_data = self.data.iloc[test_ids]
-        self.val_targets = self.targets.iloc[test_ids]
+        self.val_data = self.data.loc[list(set(test_ids))]
+        self.val_targets = self.targets.loc[list(set(test_ids))]
 
-        self.data = self.data.iloc[train_ids]
-        self.targets = self.targets.iloc[train_ids]
+        self.data = self.data.loc[list(set(train_ids))]
+        self.targets = self.targets.loc[list(set(train_ids))]
 
         # with open("exlude.pkl", 'rb') as data_file:
         #     breakpoint()
@@ -437,7 +438,7 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 
-d = NACCFutureDataset("../investigator_nacc57.csv",
-                      "../features/anamnesis")
-# len(d)
-# 
+# d = NACCFutureDataset("../investigator_nacc57.csv",
+#                       "../features/anamnesis")
+# # len(d)
+# # 
