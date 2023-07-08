@@ -4,7 +4,7 @@ import torch
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=8, nlayers=6, hidden=256):
+    def __init__(self, num_features, num_classes, nhead=8, nlayers=6, hidden=512):
         # call early initializers
         super(NACCModel, self).__init__()
 
@@ -21,7 +21,7 @@ class NACCModel(nn.Module):
         self.flatten = nn.Flatten()
 
         # dropoutp!
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.3)
 
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)
@@ -38,13 +38,13 @@ class NACCModel(nn.Module):
         net = self.linear0(torch.unsqueeze(x, dim=2))
         # recall transformers are seq first
         net = self.encoder(net.transpose(0,1), src_key_padding_mask=mask).transpose(0,1)
-        net = self.dropout(net)
         net = self.flatten(net)
+        net = self.dropout(net)
         net = self.linear1(net)
         net = self.gelu(net)
         net = self.norm(net)
-        net = self.linear2(net)
         net = self.dropout(net)
+        net = self.linear2(net)
         net = self.softmax(net)
 
         loss = None
