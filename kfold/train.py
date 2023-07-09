@@ -41,7 +41,7 @@ from datasets import *
 CONFIG = {
     "fold": 0,
     "featureset": "combined",
-    "task": "future",
+    "task": "current",
     # "base": "firm-dream-113"
     "base": None
 }
@@ -62,7 +62,7 @@ else:
 config = run.config
 
 BATCH_SIZE = 32
-EPOCHS = 256
+EPOCHS = 32
 LR = 0.0001
 FOLD = config.fold
 FEATURESET = config.featureset
