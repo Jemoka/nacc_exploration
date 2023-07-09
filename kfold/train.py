@@ -52,7 +52,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-# ONLINE = True
+ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -61,8 +61,8 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 128
-EPOCHS = 32
+BATCH_SIZE = 64
+EPOCHS = 256
 LR = 0.00001
 NHEAD = 8
 NLAYERS = 8
