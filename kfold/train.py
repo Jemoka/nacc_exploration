@@ -52,7 +52,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-# ONLINE = True
+ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -63,7 +63,7 @@ config = run.config
 
 BATCH_SIZE = 32
 EPOCHS = 256
-LR = 0.001
+LR = 0.0001
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -190,5 +190,3 @@ os.mkdir(f"./models/{run.name}")
 torch.save(model, f"./models/{run.name}/model.save")
 torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
-
-breakpoint()
