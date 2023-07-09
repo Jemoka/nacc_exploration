@@ -328,7 +328,6 @@ class NACCFutureDataset(Dataset):
         raw_data.loc[:,"age_til_dementia"] = age_til_dementia_series.sort_index(level=1)
         raw_data.loc[:, "ultimate_diag_type"] = ultimate_diag_series.sort_index(level=1)
 
-
         # shuffle
         raw_data_sample = raw_data.sample(frac=1, random_state=7)
         age_til_dementia_sample = raw_data_sample["age_til_dementia"]

@@ -52,7 +52,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-ONLINE = True
+# ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -61,12 +61,9 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 EPOCHS = 256
-LR = 0.00001
-NHEAD = 8
-NLAYERS = 8
-HIDDEN = 1056
+LR = 0.001
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -92,7 +89,22 @@ else:
     # load model
     model = torch.load(os.path.join("models", MODEL, "model.save"),
                        map_location=DEVICE).to(DEVICE)
-optimizer = AdamW(model.parameters(), lr=LR)
+optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
+
+
+# get a random validation batch
+def val_batch():
+    start = random.randint(0, len(validation_set)//BATCH_SIZE)*BATCH_SIZE
+    end = start+BATCH_SIZE
+    batch = validation_set[start:end]
+    return batch
+
+def val():
+    model.eval()
+    batch = [i.to(DEVICE) for i in val_batch()]
+    output = model(batch[0].float(), batch[1], batch[2])
+    run.log({"val_loss": output["loss"].detach().cpu().item()})
+    model.train()
 
 # calculate the f1 from tensors
 def tensor_metrics(logits, labels):
@@ -118,6 +130,9 @@ for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
     for i, batch in tqdm(enumerate(iter(dataloader)), total=len(dataloader)):
+        if i % 64 == 0:
+            val()
+
         batchp = batch
         # send batch to GPU if needed
         batch = [i.to(DEVICE) for i in batch]
