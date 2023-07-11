@@ -143,6 +143,10 @@ for epoch in range(EPOCHS):
         # send batch to GPU if needed
         batch = [i.to(DEVICE) for i in batch]
 
+        # we skip any batch of 1 element, because of BatchNorm
+        if batch[0].shape[0] == 1:
+            continue
+
         # run with actual backprop
         try:
             output = model(batch[0].float(), batch[1], batch[2])
