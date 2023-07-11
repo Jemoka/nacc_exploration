@@ -108,9 +108,14 @@ def val_batch():
 def val():
     model.eval()
     batch = [i.to(DEVICE) for i in val_batch()]
-    output = model(batch[0].float(), batch[1], batch[2])
-    run.log({"val_loss": output["loss"].detach().cpu().item()})
-    model.train()
+
+    try:
+        output = model(batch[0].float(), batch[1], batch[2])
+        run.log({"val_loss": output["loss"].detach().cpu().item()})
+    except RuntimeError:
+        pass
+    finally:
+        model.train()
 
 # calculate the f1 from tensors
 def tensor_metrics(logits, labels):
