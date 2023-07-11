@@ -150,8 +150,9 @@ for epoch in range(EPOCHS):
         # run with actual backprop
         try:
             output = model(batch[0].float(), batch[1], batch[2])
-        except ValueError:
-            breakpoint()
+        except RuntimeError:
+            optimizer.zero_grad()
+            continue
 
         # backprop
         try:
