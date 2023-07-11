@@ -43,10 +43,10 @@ from datasets import *
 CONFIG = {
     "fold": 0,
     "featureset": "combined",
-    "task": "future",
-    # "task": "current",
-    "base": "treasured-aardvark-129"
-    # "base": None
+    # "task": "future",
+    "task": "current",
+    # "base": "treasured-aardvark-129"
+    "base": None
 }
 
 
@@ -55,7 +55,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-ONLINE = True
+# ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -64,9 +64,9 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 EPOCHS = 64
-LR = 0.0001
+LR = 0.0002
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -95,7 +95,7 @@ else:
 
 
 optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
-scheduler = StepLR(optimizer, step_size=10, gamma=0.2)
+scheduler = StepLR(optimizer, step_size=8, gamma=0.5)
 
 
 # get a random validation batch
