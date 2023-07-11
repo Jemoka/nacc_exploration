@@ -66,7 +66,7 @@ config = run.config
 
 BATCH_SIZE = 8
 EPOCHS = 64
-LR = 0.0002
+LR = 0.0001
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -95,7 +95,7 @@ else:
 
 
 optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
-scheduler = StepLR(optimizer, step_size=8, gamma=0.5)
+scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
 
 
 # get a random validation batch
