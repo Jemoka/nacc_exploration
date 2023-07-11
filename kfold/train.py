@@ -43,9 +43,10 @@ from datasets import *
 CONFIG = {
     "fold": 0,
     "featureset": "combined",
-    "task": "current",
-    # "base": "firm-dream-113"
-    "base": None
+    "task": "future",
+    # "task": "current",
+    "base": "treasured-aardvark-129"
+    # "base": None
 }
 
 
@@ -63,9 +64,9 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 32
-EPOCHS = 128
-LR = 0.0001
+BATCH_SIZE = 4
+EPOCHS = 64
+LR = 0.00005
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -94,7 +95,7 @@ else:
 
 
 optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
-scheduler = StepLR(optimizer, step_size=15, gamma=0.2)
+scheduler = StepLR(optimizer, step_size=20, gamma=0.2)
 
 
 # get a random validation batch
