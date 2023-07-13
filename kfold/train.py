@@ -55,7 +55,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-# ONLINE = True
+ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -95,7 +95,7 @@ else:
 
 
 optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
-scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
+# scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
 
 
 # get a random validation batch
@@ -170,7 +170,7 @@ for epoch in range(EPOCHS):
         # logging
         run.log({"loss": output["loss"].detach().cpu().item()})
 
-    scheduler.step()
+    # scheduler.step()
 
 # model.eval()
 
