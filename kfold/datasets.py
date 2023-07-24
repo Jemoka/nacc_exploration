@@ -71,6 +71,8 @@ class NACCCurrentDataset(Dataset):
         # Drop the parcticipants 
         self.raw_data = self.raw_data.drop(columns="NACCID")
 
+        # TODO test cropping data to one sample per
+
         # Make it a multiindex by combining the experiment ID with the participant
         # so we can index by participant as first pass
         index_participant_correlated = list(zip(participants, pd.RangeIndex(0, len(self.raw_data))))
@@ -119,6 +121,7 @@ class NACCCurrentDataset(Dataset):
         # get the porportional weights
         self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
         self.raw_data = self.raw_data.sample(frac=1, random_state=7)
+        self.raw_data = self.raw_data.groupby(self.raw_data.index.get_level_values(0)).head(1)
 
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
@@ -328,6 +331,7 @@ class NACCFutureDataset(Dataset):
         raw_data.loc[:,"age_til_dementia"] = age_til_dementia_series.sort_index(level=1)
         raw_data.loc[:, "ultimate_diag_type"] = ultimate_diag_series.sort_index(level=1)
 
+
         # shuffle
         raw_data_sample = raw_data.sample(frac=1, random_state=7)
         age_til_dementia_sample = raw_data_sample["age_til_dementia"]
@@ -339,6 +343,10 @@ class NACCFutureDataset(Dataset):
 
         # shuffle again and sample based on median size
         raw_data_sample =  raw_data_sample.sample(frac=1, random_state=7)
+
+
+        # TODO test cropping data to one sample per
+        raw_data_sample = raw_data_sample.groupby(raw_data_sample.index.get_level_values(0)).head(1)
 
         # k fold
 
@@ -440,8 +448,8 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 
-# d = NACCFutureDataset("../investigator_nacc57.csv",
-#                       "../features/combined")
-# len(d)
+d = NACCCurrentDataset("../investigator_nacc57.csv",
+                       "../features/combined")
+len(d)
 # d[0]
-# 
+

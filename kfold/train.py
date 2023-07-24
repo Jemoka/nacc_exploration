@@ -64,9 +64,9 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 EPOCHS = 64
-LR = 0.0001
+LR = 0.00005
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -95,7 +95,7 @@ else:
 
 
 optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
-scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
+# scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
 
 
 # get a random validation batch
@@ -170,7 +170,7 @@ for epoch in range(EPOCHS):
         # logging
         run.log({"loss": output["loss"].detach().cpu().item()})
 
-    scheduler.step()
+    # scheduler.step()
 
 # model.eval()
 
