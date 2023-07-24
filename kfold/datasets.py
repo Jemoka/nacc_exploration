@@ -448,8 +448,8 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 
-d = NACCCurrentDataset("../investigator_nacc57.csv",
-                       "../features/combined")
-len(d)
-# d[0]
+# d = NACCCurrentDataset("../investigator_nacc57.csv",
+#                        "../features/combined")
+# len(d)
+# # d[0]
 
