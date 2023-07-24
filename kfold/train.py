@@ -65,7 +65,7 @@ else:
 config = run.config
 
 BATCH_SIZE = 4
-EPOCHS = 64
+EPOCHS = 128
 LR = 0.00005
 FOLD = config.fold
 FEATURESET = config.featureset
