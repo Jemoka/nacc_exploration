@@ -44,7 +44,7 @@ CONFIG = {
     "fold": 0,
     "featureset": "combined",
     # "task": "future",
-    "task": "current",
+    "task": "neuralpsych-age",
     # "base": "treasured-aardvark-129"
     "base": None
 }
@@ -64,9 +64,9 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 4
+BATCH_SIZE = 32
 EPOCHS = 128
-LR = 0.00005
+LR = 0.00007
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -94,7 +94,7 @@ else:
                        map_location=DEVICE).to(DEVICE)
 
 
-optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
+optimizer = AdamW(model.parameters(), lr=LR)
 # scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
 
 

@@ -4,7 +4,7 @@ import torch
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=4, nlayers=2, hidden=128):
+    def __init__(self, num_features, num_classes, nhead=4, nlayers=4, hidden=256):
         # call early initializers
         super(NACCModel, self).__init__()
 
@@ -25,9 +25,10 @@ class NACCModel(nn.Module):
 
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)
-        self.norm = nn.BatchNorm1d(hidden)
+        self.linear2 = nn.Linear(hidden, hidden)
+        self.linear3 = nn.Linear(hidden, num_classes)
+
         self.gelu = nn.GELU()
-        self.linear2 = nn.Linear(hidden, num_classes)
         self.softmax = nn.Softmax(1)
 
         # loss
@@ -42,10 +43,9 @@ class NACCModel(nn.Module):
         net = self.gelu(net)
         net = self.dropout(net)
         net = self.linear1(net)
-        net = self.norm(net)
         net = self.gelu(net)
-        net = self.dropout(net)
         net = self.linear2(net)
+        net = self.gelu(net)
         net = self.softmax(net)
 
         loss = None

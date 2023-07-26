@@ -71,6 +71,10 @@ class NACCCurrentDataset(Dataset):
         # Drop the parcticipants 
         self.raw_data = self.raw_data.drop(columns="NACCID")
 
+        # if age, redo age by dividing by 10
+        if len(self.raw_data.NACCAGE) > 0:
+            self.raw_data.NACCAGE = self.raw_data.NACCAGE/10
+
         # TODO test cropping data to one sample per
 
         # Make it a multiindex by combining the experiment ID with the participant
@@ -121,7 +125,7 @@ class NACCCurrentDataset(Dataset):
         # get the porportional weights
         self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
         self.raw_data = self.raw_data.sample(frac=1, random_state=7)
-        self.raw_data = self.raw_data.groupby(self.raw_data.index.get_level_values(0)).head(1)
+        self.raw_data = self.raw_data.groupby(self.raw_data.index.get_level_values(0)).apply(lambda x: x.sample(1))
 
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
@@ -346,7 +350,7 @@ class NACCFutureDataset(Dataset):
 
 
         # TODO test cropping data to one sample per
-        raw_data_sample = raw_data_sample.groupby(raw_data_sample.index.get_level_values(0)).head(1)
+        raw_data_sample = raw_data_sample.groupby(raw_data_sample.index.get_level_values(0)).apply(lambda x: x.sample(1))
 
         # k fold
 
@@ -413,7 +417,7 @@ class NACCFutureDataset(Dataset):
         # and set it
         one_hot_target[self.__target_indicies.index(target)] = 1
 
-        return torch.tensor(data).long(), torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
+        return torch.tensor(data).long()/30, torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
 
     def __getitem__(self, index):
         # index the data
@@ -442,7 +446,7 @@ class NACCFutureDataset(Dataset):
         # return parts
         inp, mask, out = zip(*dataset)
 
-        return torch.stack(inp).long(), torch.stack(mask).bool(), torch.stack(out).float()
+        return torch.stack(inp).long()/30, torch.stack(mask).bool(), torch.stack(out).float()
 
     def __len__(self):
         return len(self.data)
