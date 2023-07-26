@@ -175,7 +175,7 @@ class NACCCurrentDataset(Dataset):
         # and set it
         one_hot_target[self.__target_indicies.index(target)] = 1
 
-        return torch.tensor(data).long(), torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
+        return torch.tensor(data).float()/30, torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
 
     def __getitem__(self, index):
         # index the data
@@ -204,7 +204,7 @@ class NACCCurrentDataset(Dataset):
         # return parts
         inp, mask, out = zip(*dataset)
 
-        return torch.stack(inp).long(), torch.stack(mask).bool(), torch.stack(out).float()
+        return torch.stack(inp).float()/30, torch.stack(mask).bool(), torch.stack(out).float()
 
     def __len__(self):
         return len(self.data)
@@ -446,7 +446,7 @@ class NACCFutureDataset(Dataset):
         # return parts
         inp, mask, out = zip(*dataset)
 
-        return torch.stack(inp).long()/30, torch.stack(mask).bool(), torch.stack(out).float()
+        return torch.stack(inp).float()/30, torch.stack(mask).bool(), torch.stack(out).float()
 
     def __len__(self):
         return len(self.data)

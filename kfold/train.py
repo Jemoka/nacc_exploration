@@ -42,9 +42,9 @@ from datasets import *
 
 CONFIG = {
     "fold": 0,
-    "featureset": "combined",
+    "featureset": "neuralpsych-v2",
     # "task": "future",
-    "task": "neuralpsych-age",
+    "task": "current",
     # "base": "treasured-aardvark-129"
     "base": None
 }
@@ -66,7 +66,7 @@ config = run.config
 
 BATCH_SIZE = 32
 EPOCHS = 128
-LR = 0.00007
+LR = 0.0001
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -136,7 +136,7 @@ def tensor_metrics(logits, labels):
 
     return pr_curve, roc, cm, acc
 
-# model.train()
+model.train()
 for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
 
