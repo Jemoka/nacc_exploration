@@ -72,8 +72,8 @@ class NACCCurrentDataset(Dataset):
         self.raw_data = self.raw_data.drop(columns="NACCID")
 
         # if age, redo age by dividing by 10
-        if len(self.raw_data.NACCAGE) > 0:
-            self.raw_data.NACCAGE = self.raw_data.NACCAGE/10
+        # if len(self.raw_data.NACCAGE) > 0:
+        #     self.raw_data.NACCAGE = self.raw_data.NACCAGE/10
 
         # TODO test cropping data to one sample per
 
