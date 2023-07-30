@@ -4,7 +4,7 @@ import torch
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=4, nlayers=4, hidden=256):
+    def __init__(self, num_features, num_classes, nhead=4, nlayers=2, hidden=128):
         # call early initializers
         super(NACCModel, self).__init__()
 
@@ -21,7 +21,7 @@ class NACCModel(nn.Module):
         self.flatten = nn.Flatten()
 
         # dropoutp!
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.3)
 
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)
