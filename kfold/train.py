@@ -66,8 +66,8 @@ config = run.config
 
 BATCH_SIZE = 32
 EPOCHS = 128
-LR = 0.FOLD
-0001 = config.fold
+LR = 0.0001
+FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
 
