@@ -66,8 +66,8 @@ config = run.config
 
 BATCH_SIZE = 32
 EPOCHS = 128
-LR = 0.0001
-FOLD = config.fold
+LR = 0.FOLD
+0001 = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
 
@@ -94,7 +94,7 @@ else:
                        map_location=DEVICE).to(DEVICE)
 
 
-optimizer = AdamW(model.parameters(), lr=LR)
+optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
 # scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
 
 
