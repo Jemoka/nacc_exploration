@@ -204,7 +204,8 @@ class NACCCurrentDataset(Dataset):
         # return parts
         inp, mask, out = zip(*dataset)
 
-        return torch.stack(inp).float()/30, torch.stack(mask).bool(), torch.stack(out).float()
+        # process already divides by 30; don't do it twice
+        return torch.stack(inp).float(), torch.stack(mask).bool(), torch.stack(out).float()
 
     def __len__(self):
         return len(self.data)
@@ -446,7 +447,8 @@ class NACCFutureDataset(Dataset):
         # return parts
         inp, mask, out = zip(*dataset)
 
-        return torch.stack(inp).float()/30, torch.stack(mask).bool(), torch.stack(out).float()
+        # process already divides by 30; don't do it twice
+        return torch.stack(inp).float(), torch.stack(mask).bool(), torch.stack(out).float()
 
     def __len__(self):
         return len(self.data)
