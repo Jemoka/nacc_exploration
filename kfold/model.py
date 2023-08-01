@@ -21,14 +21,14 @@ class NACCModel(nn.Module):
         self.flatten = nn.Flatten()
 
         # dropoutp!
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.5)
 
         # prediction network
         self.linear1 = nn.Linear(hidden*num_features, hidden)
         self.linear2 = nn.Linear(hidden, hidden)
         self.linear3 = nn.Linear(hidden, num_classes)
 
-        self.gelu = nn.GELU()
+        self.gelu = nn.ReLU()
         self.softmax = nn.Softmax(1)
 
         # loss
