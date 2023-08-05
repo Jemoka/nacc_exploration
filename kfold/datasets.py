@@ -136,11 +136,15 @@ class NACCCurrentDataset(Dataset):
         self.targets = self.raw_data[target_feature]
         self.data = self.raw_data[self.features] 
 
+        # append the dummy variables
+        self.data["DUMMY"] = np.random.randint(1, 3, self.data.shape[0])
+
         # store the traget indicies
         self.__target_indicies = target_indicies
 
         # get number of features, by hoisting the get function up and getting length
-        self._num_features = len(self.features)
+        # we plus 1 for the dummy features which we will include for current prediction
+        self._num_features = len(self.features)+1
 
         # crop the data for validatino
         self.val_data = self.data.iloc[test_ids]
