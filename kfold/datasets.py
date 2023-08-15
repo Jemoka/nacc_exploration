@@ -376,13 +376,14 @@ class NACCFutureDataset(Dataset):
         self.targets = raw_data_sample["ultimate_diag_type"]
 
         # then isolate the daata
-        self.data = raw_data_sample[self.features] 
+        self.data = raw_data_sample[self.features+["target_feature"]] 
 
         # store the traget indicies
         self.__target_indicies = target_indicies
 
         # get number of features, by hoisting the get function up and getting length
-        self._num_features = len(self.features)
+        # +1 for the target feature
+        self._num_features = len(self.features) + 1
 
         # crop the data for validatino
         self.val_data = self.data.loc[list(set(test_ids))]
@@ -460,6 +461,7 @@ class NACCFutureDataset(Dataset):
 
 # d = NACCCurrentDataset("../investigator_nacc57.csv",
 #                        "../features/combined")
-# len(d)
+# # len(d)
+# d[10][0].shape
 # # d[0]
 
