@@ -116,6 +116,8 @@ class NACCCurrentDataset(Dataset):
         # we add 1 for dummy variable used for fine tuning later
 
         data["DUMMY"] = np.random.randint(1, 3, data.shape[0])
+        data = data[features+["DUMMY", "current_target"]]
+        data = data.dropna()
 
         # crop the data for validatino
         self.val_data = data[data.NACCID.isin(test_participants)][features+["DUMMY"]]
@@ -276,6 +278,9 @@ class NACCFutureDataset(Dataset):
         self._num_features = len(features) + 1
         # we add 1 for dummy variable used for fine tuning later
 
+        data = data[features+["current_target", "future_target"]]
+        data = data.dropna()
+
         # crop the data for validatino
         self.val_data = data[data.NACCID.isin(test_participants)][features+["current_target"]]
         self.val_targets = data[data.NACCID.isin(test_participants)].future_target
@@ -345,7 +350,8 @@ class NACCFutureDataset(Dataset):
         return len(self.data)
 
 # d = NACCFutureDataset("../investigator_nacc57.csv",
-#                        "../features/combined")
+#                       "../features/combined")
+# d[0]
 # d.val()
 # len(d)
 # # len(d)
