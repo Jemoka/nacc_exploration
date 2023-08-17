@@ -49,7 +49,7 @@ CONFIG = {
     # "base": "dry-star-164"
     "base": None, 
     "batch_size": 32,
-    "lr": 0.00005,
+    "lr": 0.0001,
     # "batch_size": 8,
     # "lr": 0.00005,
     "epochs": 64,
@@ -64,7 +64,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-ONLINE = True
+# ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -158,6 +158,7 @@ for epoch in range(EPOCHS):
         batchp = batch
         # send batch to GPU if needed
         batch = [i.to(DEVICE) for i in batch]
+
 
         # we skip any batch of 1 element, because of BatchNorm
         if batch[0].shape[0] == 1:
