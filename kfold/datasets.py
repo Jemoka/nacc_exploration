@@ -40,14 +40,14 @@ bound=(1,3)
 # loading data
 class NACCCurrentDataset(Dataset):
 
-    def __init__(self, file_path, feature_path,
+    def __init__(self, data_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
                  target_indicies=[1,3,4], fold=0):
         """The NeuralPsycology Dataset
 
         Arguments:
 
-        file_path (str): path to the NACC csv
+        data_path (str): path to the NACC csv
         feature_path (str): path to a text file with the input features to scean
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
@@ -57,101 +57,72 @@ class NACCCurrentDataset(Dataset):
         # initialize superclass
         super(NACCCurrentDataset, self).__init__()
 
-        # Read the raw dataset
-        self.raw_data = pd.read_csv(file_path)
+        #### OPS ####
+        # load the data
+        data = pd.read_csv(data_path)
 
         # get the fature variables
-        with open(feature_path, 'r') as df:
-            lines = df.readlines()
-            self.features = [i.strip() for i in lines]
+        with open(feature_path, 'r') as f:
+            lines = f.readlines()
+            features = [i.strip() for i in lines]
 
-        # Get a list of participants
-        participants = self.raw_data["NACCID"]
+        #### CURRENT PREDICTION TARGETS ####
+        # construct the artificial target 
+        # everything is to be ignored by default
+        # this new target has: 0 - Control; 1 - MCI; 2 - Dementia
+        data.loc[:, "current_target"] = -1
 
-        # Drop the parcticipants 
-        self.raw_data = self.raw_data.drop(columns="NACCID")
+        # NACCETPR == 88; DEMENTED == 0 means Control
+        data.loc[(data.NACCETPR == 88)&
+                (data.DEMENTED == 0), "current_target"] = 0
+        # NACCETPR == 1; DEMENTED == 1; means AD Dementia
+        data.loc[(data.NACCETPR == 1)&
+                (data.DEMENTED == 1), "current_target"] = 2
+        # NACCETPR == 1; DEMENTED == 0; NACCTMCI = 1 or 2 means amnestic MCI
+        data.loc[((data.NACCETPR == 1)&
+                (data.DEMENTED == 0)&
+                ((data.NACCTMCI == 1) |
+                (data.NACCTMCI == 2))), "current_target"] = 1
 
-        # if age, redo age by dividing by 10
-        # if len(self.raw_data.NACCAGE) > 0:
-        #     self.raw_data.NACCAGE = self.raw_data.NACCAGE/10
+        # drop the columns that are irrelavent to us (i.e. not the labels above)
+        data = data[data.current_target != -1]
+        # data.current_target.value_counts()
 
-        # TODO test cropping data to one sample per
+        #### TARGET BALANCING ####
+        # crop the data to ensure balanced classes
+        # TODO better dataaug that could exist?
+        # we crop by future target, because that ensures
+        # that results in more balanced classes for current
+        # target even if we are nox explicitly balancing it
+        min_class = min(data.current_target.value_counts())
 
-        # Make it a multiindex by combining the experiment ID with the participant
-        # so we can index by participant as first pass
-        index_participant_correlated = list(zip(participants, pd.RangeIndex(0, len(self.raw_data))))
-        index_multi = pd.MultiIndex.from_tuples(index_participant_correlated, names=["Participant ID", "Entry ID"])
-        self.raw_data.index = index_multi
+        data = pd.concat([data[data.current_target==0].sample(n=min_class, random_state=7),
+                          data[data.current_target==1].sample(n=min_class, random_state=7),
+                          data[data.current_target==2].sample(n=min_class, random_state=7)]).sample(frac=1, random_state=7)
 
-        # TODO DELETE exclude validation participants
-        with open("./exlude.pkl", 'rb') as df:
-            exclude = pickle.load(df)
 
-        # filter them out
-        self.raw_data = self.raw_data[~self.raw_data.index.get_level_values(0).isin(exclude)]
-
-        # k fold
-        participants = self.raw_data.index.get_level_values(0)
-        participants = shuffle(participants)
-
-        self.raw_data = self.raw_data.loc[list(set(participants))] 
-
-        # synthesize the target feature
-        target_feature="target_feature"
-        self.raw_data.loc[:, "target_feature"] = -1
-        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 88)&
-                                               (self.raw_data.DEMENTED == 0)] = target_indicies[0]
-        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
-                                               (self.raw_data.DEMENTED == 1)] = target_indicies[2]
-        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
-                                               (self.raw_data.DEMENTED == 0)&
-                                               ((self.raw_data.NACCTMCI == 1) |
-                                                (self.raw_data.NACCTMCI == 2))] = target_indicies[1]
-        # filter fort the correct target features
-        self.raw_data = self.raw_data[self.raw_data.target_feature != -1] 
-
-        # disproportionally sample the data w.r.t. the relationships
-        control_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[0]])
-        mci_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[1]])
-        dementia_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[2]])
-
-        sample_size = min(control_cases, mci_cases, dementia_cases)
-
-        # and the sample the correct pieces
-        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size, random_state=7)
-        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size, random_state=7)
-        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size, random_state=7)
-
-        # get the porportional weights
-        self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
-        self.raw_data = self.raw_data.sample(frac=1, random_state=7)
-        self.raw_data = self.raw_data.groupby(self.raw_data.index.get_level_values(0)).apply(lambda x: x.sample(1))
-
+        #### TRAIN_VAL SPLIT ####
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
-        splits = kf.split(self.raw_data)
+        # split participants for indexing
+        participants = list(set(data.NACCID.tolist()))
+        splits = kf.split(participants)
         train_ids, test_ids = list(splits)[fold]
+        train_participants = [participants[i] for i in train_ids]
+        test_participants = [participants[i] for i in test_ids]
 
-        # Calculate the target data
-        self.targets = self.raw_data[target_feature]
-        self.data = self.raw_data[self.features] 
+        # calculate number of features
+        self._num_features = len(features) + 1
+        # we add 1 for dummy variable used for fine tuning later
 
-        # append the dummy variables
-        self.data["DUMMY"] = np.random.randint(1, 3, self.data.shape[0])
-
-        # store the traget indicies
-        self.__target_indicies = target_indicies
-
-        # get number of features, by hoisting the get function up and getting length
-        # we plus 1 for the dummy features which we will include for current prediction
-        self._num_features = len(self.features)+1
+        data["DUMMY"] = np.random.randint(1, 3, data.shape[0])
 
         # crop the data for validatino
-        self.val_data = self.data.iloc[test_ids]
-        self.val_targets = self.targets.iloc[test_ids]
+        self.val_data = data[data.NACCID.isin(test_participants)][features+["DUMMY"]]
+        self.val_targets = data[data.NACCID.isin(test_participants)].current_target
 
-        self.data = self.data.iloc[train_ids]
-        self.targets = self.targets.iloc[train_ids]
+        self.data = data[data.NACCID.isin(train_participants)][features+["DUMMY"]]
+        self.targets = data[data.NACCID.isin(train_participants)].current_target
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
@@ -175,9 +146,9 @@ class NACCCurrentDataset(Dataset):
                 return self[index-indx]
         
         # seed the one-hot vector
-        one_hot_target = [0 for _ in range(len(self.__target_indicies))]
+        one_hot_target = [0 for _ in range(3)]
         # and set it
-        one_hot_target[self.__target_indicies.index(target)] = 1
+        one_hot_target[target] = 1
 
         return torch.tensor(data).float()/30, torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
 
@@ -215,20 +186,17 @@ class NACCCurrentDataset(Dataset):
         return len(self.data)
 
 
-# loading data
 class NACCFutureDataset(Dataset):
 
-    def __init__(self, file_path, feature_path,
+    def __init__(self, data_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_indicies=[1,3,4],
-                 fold=0):
+                 target_indicies=[1,3,4], fold=0):
         """The NeuralPsycology Dataset
 
         Arguments:
 
-        file_path (str): path to the NACC csv
+        data_path (str): path to the NACC csv
         feature_path (str): path to a text file with the input features to scean
-        [target_feature] (str): the name of feature to serve as the target
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
         [fold] (int): the n-th fold to select
@@ -237,165 +205,83 @@ class NACCFutureDataset(Dataset):
         # initialize superclass
         super(NACCFutureDataset, self).__init__()
 
-        # Read the raw dataset
-        self.raw_data = pd.read_csv(file_path)
+        #### OPS ####
+        # load the data
+        data = pd.read_csv(data_path)
 
         # get the fature variables
-        with open(feature_path, 'r') as data_file:
-            lines = data_file.readlines()
-            self.features = [i.strip() for i in lines]
+        with open(feature_path, 'r') as f:
+            lines = f.readlines()
+            features = [i.strip() for i in lines]
 
-        # Get a list of participants
-        participants = self.raw_data["NACCID"]
+        #### CURRENT PREDICTION TARGETS ####
+        # construct the artificial target 
+        # everything is to be ignored by default
+        # this new target has: 0 - Control; 1 - MCI; 2 - Dementia
+        data.loc[:, "current_target"] = -1
 
-        # Drop the parcticipants 
-        self.raw_data = self.raw_data.drop(columns="NACCID")
+        # NACCETPR == 88; DEMENTED == 0 means Control
+        data.loc[(data.NACCETPR == 88)&
+                (data.DEMENTED == 0), "current_target"] = 0
+        # NACCETPR == 1; DEMENTED == 1; means AD Dementia
+        data.loc[(data.NACCETPR == 1)&
+                (data.DEMENTED == 1), "current_target"] = 2
+        # NACCETPR == 1; DEMENTED == 0; NACCTMCI = 1 or 2 means amnestic MCI
+        data.loc[((data.NACCETPR == 1)&
+                (data.DEMENTED == 0)&
+                ((data.NACCTMCI == 1) |
+                (data.NACCTMCI == 2))), "current_target"] = 1
 
-        # Make it a multiindex by combining the experiment ID with the participant
-        # so we can index by participant as first pass
-        index_participant_correlated = list(zip(participants, pd.RangeIndex(0, len(self.raw_data))))
-        index_multi = pd.MultiIndex.from_tuples(index_participant_correlated, names=["Participant ID", "Entry ID"])
-        self.raw_data.index = index_multi
+        # drop the columns that are irrelavent to us (i.e. not the labels above)
+        data = data[data.current_target != -1]
+        # data.current_target.value_counts()
 
+        #### FUTURE PREDICTION TARGETS ####
+        next_measurement_age = data.groupby(data.NACCID).shift(-1).NACCAGE - data.groupby(data.NACCID).NACCAGE.shift(0)
+        data.loc[:, "future_target"] = data.groupby(data.NACCID).shift(-1).current_target
 
-        target_feature="target_feature"
-        self.raw_data.loc[:, "target_feature"] = -1
-        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 88)&
-                                               (self.raw_data.DEMENTED == 0)] = target_indicies[0]
-        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
-                                               (self.raw_data.DEMENTED == 1)] = target_indicies[2]
-        self.raw_data.loc[:, "target_feature"][(self.raw_data.NACCETPR == 1)&
-                                               (self.raw_data.DEMENTED == 0)&
-                                               ((self.raw_data.NACCTMCI == 1) |
-                                                (self.raw_data.NACCTMCI == 2))] = target_indicies[1]
-        # filter fort the correct target features
-        self.raw_data = self.raw_data[self.raw_data.target_feature != -1] 
+        # For those that fit in the 1-3 year horizon, we keep them
+        next_measurement_applicable = (next_measurement_age > 0) & (next_measurement_age < 4)
 
-        # disproportionally sample the data w.r.t. the relationships
-        control_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[0]])
-        mci_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[1]])
-        dementia_cases = len(self.raw_data[self.raw_data.target_feature == target_indicies[2]])
+        # again drop the columns that are irrelavent to us (i.e. those without future results)
+        data = data[next_measurement_applicable]
 
-        sample_size = min(control_cases, mci_cases, dementia_cases)
+        #### TARGET BALANCING ####
+        # crop the data to ensure balanced classes
+        # TODO better dataaug that could exist?
+        # we crop by future target, because that ensures
+        # that results in more balanced classes for current
+        # target even if we are nox explicitly balancing it
+        min_class = min(data.current_target.value_counts())
 
-        # and the sample the correct pieces
-        control_samples = self.raw_data[self.raw_data.target_feature == target_indicies[0]].sample(n=sample_size, random_state=7)
-        mci_samples = self.raw_data[self.raw_data.target_feature == target_indicies[1]].sample(n=sample_size, random_state=7)
-        dementia_samples = self.raw_data[self.raw_data.target_feature == target_indicies[2]].sample(n=sample_size, random_state=7)
-
-        # get the porportional weights
-        self.raw_data = pd.concat([control_samples, mci_samples, dementia_samples])
-        self.raw_data = self.raw_data.sample(frac=1, random_state=7)
-
-        raw_data = self.raw_data
-
-        # cosntruct a "diagnosis-in-nyears" column
-        age_date_data = raw_data[["target_feature", "NACCAGE"]]
-
-        max_age_plus_fifty = max(raw_data.NACCAGE)+50
-
-        def find_data(grp):
-            """find the age til dementia
-
-            grp: DataFrameGroupBy 
-            """
-
-            # get dementia indicies
-            mci_indicies = grp[(grp.target_feature==3)]
-            dementia_indicies = grp[(grp.target_feature==4)]
-
-            # store demented
-            ultimate_diag_type = (3 if(len(mci_indicies)) else 1) if (len(dementia_indicies) == 0) else 4
-
-            # if length is 0 "the person never had dementia"
-            if ultimate_diag_type == 1:
-                # make the dementia age max+50 i.e. they will get dementia a long time later
-                initial_dementia_age = max_age_plus_fifty
-            elif ultimate_diag_type == 3:
-                # get the first MCI age 
-                initial_dementia_age = mci_indicies.iloc[0].NACCAGE
-            else:
-                # get the first dEMENITA age 
-                initial_dementia_age = dementia_indicies.iloc[0].NACCAGE
-
-            # get the number of years to the age of dementia
-            age_til_dementia = (initial_dementia_age - grp.NACCAGE).apply(lambda x:0 if x<0 else x)
-
-            # will be demented will be repeted n times to fit length
-            return age_til_dementia, [ ultimate_diag_type for _ in range(len(grp)) ]
-
-        # weird data gymnastics to unpeel the two columns
-        print("Loading timeseries groups...")
-        age_til_dementia, ultimate_diag_type = zip(*(age_date_data.groupby(level=0,axis=0).progress_apply(find_data)))
-        print("Done!")
-
-        # create series for the outputs
-        age_til_dementia_series = pd.concat(age_til_dementia)
-        ultimate_diag_series = pd.Series([j for i in ultimate_diag_type for j in i])
-
-        # align the index
-        ultimate_diag_series.index = age_til_dementia_series.index
-
-        # dump in result
-        raw_data.loc[:,"age_til_dementia"] = age_til_dementia_series.sort_index(level=1)
-        raw_data.loc[:, "ultimate_diag_type"] = ultimate_diag_series.sort_index(level=1)
+        data = pd.concat([data[data.current_target==0].sample(n=min_class,
+                                                              random_state=7),
+                          data[data.current_target==1].sample(n=min_class,
+                                                              random_state=7),
+                          data[data.current_target==2].sample(n=min_class,
+                                                              random_state=7)]).sample(frac=1, random_state=7)
 
 
-        # shuffle
-        raw_data_sample = raw_data.sample(frac=1, random_state=7)
-        age_til_dementia_sample = raw_data_sample["age_til_dementia"]
-        raw_data_sample = raw_data_sample[((age_til_dementia_sample>bound[0])&(age_til_dementia_sample<bound[1]))|(age_til_dementia_sample > 50)] # > 50 is control 
-
-        # shuffle again and sample based on median size
-        median_count = raw_data_sample.ultimate_diag_type.value_counts().median()
-        raw_data_sample = raw_data_sample.groupby("ultimate_diag_type").sample(n=int(median_count), replace=True, random_state=7)
-
-        # shuffle again and sample based on median size
-        raw_data_sample =  raw_data_sample.sample(frac=1, random_state=7)
-
-
-        # TODO test cropping data to one sample per
-        raw_data_sample = raw_data_sample.groupby(raw_data_sample.index.get_level_values(0)).apply(lambda x: x.sample(1))
-
-        # k fold
-
+        #### TRAIN_VAL SPLIT ####
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
-        participants = list(set(raw_data_sample.index.get_level_values(0)))
+        # split participants for indexing
+        participants = list(set(data.NACCID.tolist()))
         splits = kf.split(participants)
         train_ids, test_ids = list(splits)[fold]
-        train_ids = [participants[i] for i in train_ids]
-        test_ids = [participants[i] for i in test_ids]
+        train_participants = [participants[i] for i in train_ids]
+        test_participants = [participants[i] for i in test_ids]
 
-        # participants = 
-        # participants = shuffle(participants)
-
-        # raw_data_sample = raw_data_sample.loc[list(set(participants))] 
-
-        # Calculate the target data. this is not trivial.
-        self.targets = raw_data_sample["ultimate_diag_type"]
-
-        # then isolate the daata
-        self.data = raw_data_sample[self.features+["target_feature"]] 
-
-        # store the traget indicies
-        self.__target_indicies = target_indicies
-
-        # get number of features, by hoisting the get function up and getting length
-        # +1 for the target feature
-        self._num_features = len(self.features) + 1
+        # calculate number of features
+        self._num_features = len(features) + 1
+        # we add 1 for dummy variable used for fine tuning later
 
         # crop the data for validatino
-        self.val_data = self.data.loc[list(set(test_ids))]
-        self.val_targets = self.targets.loc[list(set(test_ids))]
+        self.val_data = data[data.NACCID.isin(test_participants)][features+["current_target"]]
+        self.val_targets = data[data.NACCID.isin(test_participants)].future_target
 
-        self.data = self.data.loc[list(set(train_ids))]
-        self.targets = self.targets.loc[list(set(train_ids))]
-
-        # with open("exlude.pkl", 'rb') as data_file:
-        #     breakpoint()
-        #     exclude = pickle.load(data_file)
-        #     val_participants = set(self.val_data.index.get_level_values(0))
+        self.data = data[data.NACCID.isin(train_participants)][features+["current_target"]]
+        self.targets = data[data.NACCID.isin(train_participants)].future_target
 
     def __process(self, data, target, index=None):
         # the discussed dataprep
@@ -405,7 +291,7 @@ class NACCFutureDataset(Dataset):
         data_found = (data > 80) | (data < 0)
         data[data_found] = 0
         # then, the found-ness becomes a mask
-        data_found_mask = (data_found)
+        data_found_mask = data_found
 
         # if it is a sample with no tangible data
         # well give up and get another sample:
@@ -419,11 +305,11 @@ class NACCFutureDataset(Dataset):
                 return self[index-indx]
         
         # seed the one-hot vector
-        one_hot_target = [0 for _ in range(len(self.__target_indicies))]
+        one_hot_target = [0 for _ in range(3)]
         # and set it
-        one_hot_target[self.__target_indicies.index(target)] = 1
+        one_hot_target[int(target)] = 1
 
-        return torch.tensor(data).long()/30, torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
+        return torch.tensor(data).float()/30, torch.tensor(data_found_mask).bool(), torch.tensor(one_hot_target).float()
 
     def __getitem__(self, index):
         # index the data
@@ -446,7 +332,7 @@ class NACCFutureDataset(Dataset):
             try:
                 dataset.append(self.__process(self.val_data.iloc[index].copy(),
                                             self.val_targets.iloc[index].copy()))
-            except:
+            except ValueError:
                 continue # all zero ignore
 
         # return parts
@@ -458,10 +344,10 @@ class NACCFutureDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-
-# d = NACCCurrentDataset("../investigator_nacc57.csv",
+# d = NACCFutureDataset("../investigator_nacc57.csv",
 #                        "../features/combined")
+# d.val()
+# len(d)
 # # len(d)
 # d[10][0].shape
-# # d[0]
 
