@@ -4,7 +4,7 @@ import torch
 # the transformer network
 class NACCModel(nn.Module):
 
-    def __init__(self, num_features, num_classes, nhead=4, nlayers=2, hidden=128):
+    def __init__(self, num_features, num_classes, nhead=4, nlayers=3, hidden=128):
         # call early initializers
         super(NACCModel, self).__init__()
 

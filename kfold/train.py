@@ -42,11 +42,20 @@ from datasets import *
 
 CONFIG = {
     "fold": 0,
-    "featureset": "neuralpsych-v2",
+    # "featureset": "neuralpsych-v2",
+    "featureset": "combined",
     # "task": "future",
     "task": "current",
-    # "base": "treasured-aardvark-129"
-    "base": None
+    # "base": "dry-star-164"
+    "base": None, 
+    "batch_size": 32,
+    "lr": 0.00005,
+    # "batch_size": 8,
+    # "lr": 0.00005,
+    "epochs": 64,
+
+    "nlayers": 3,
+    "hidden": 128,
 }
 
 
@@ -55,7 +64,7 @@ TASK = CONFIG["task"]
 ONE_SHOT = True
 # ONE_SHOT = False
 ONLINE = False
-# ONLINE = True
+ONLINE = True
 
 if ONE_SHOT:
     run = wandb.init(project="nacc_future" if TASK == "future" else "nacc", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
@@ -64,9 +73,10 @@ else:
 
 config = run.config
 
-BATCH_SIZE = 32
-EPOCHS = 128
-LR = 0.0001
+BATCH_SIZE = config.batch_size
+LR = config.lr
+EPOCHS = config.epochs
+
 FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
@@ -81,13 +91,14 @@ elif TASK == "future":
 else:
     raise Exception("Weird task heh.")
 
+
 validation_set = TensorDataset(*dataset.val())
 validation_loader = DataLoader(validation_set, batch_size=BATCH_SIZE, shuffle=True)
 
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 if not MODEL:
-    model = NACCModel(dataset._num_features, 3).to(DEVICE)
+    model = NACCModel(dataset._num_features, 3, nlayers=config.nlayers, hidden=config.hidden).to(DEVICE)
 else:
     # load model
     model = torch.load(os.path.join("models", MODEL, "model.save"),
