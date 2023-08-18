@@ -147,6 +147,24 @@ def tensor_metrics(logits, labels):
 
     return pr_curve, roc, cm, acc
 
+def future_metrics(logits, labels, current_targets):
+    label_indicies = np.argmax(labels, 1)
+    current_target_indicies = np.argmax(current_targets, 1)
+    logits_indicies = logits
+
+    indicies_didnt_change = label_indicies == current_target_indicies
+
+    logits_changed = logits[~indicies_didnt_change]
+    labels_changed = labels[~indicies_didnt_change]
+
+    logits_unchanged = logits[indicies_didnt_change]
+    labels_unchanged = labels[indicies_didnt_change]
+
+    future_group_changed = tensor_metrics(logits_changed, labels_changed)
+    future_group_unchanged = tensor_metrics(logits_unchanged, labels_unchanged)
+
+    return future_group_changed, future_group_unchanged
+
 model.train()
 for epoch in range(EPOCHS):
     print(f"Currently training epoch {epoch}...")
@@ -189,19 +207,28 @@ for epoch in range(EPOCHS):
 # finally together eventually
 logits = np.empty((0,3))
 labels = np.empty((0,3))
+current_targets = np.empty((0,3))
 
 print("Validating...")
 
-# validation is large, so we do batches
-for i in tqdm(iter(validation_loader)):
-    batch = [j.to(DEVICE) for j in i]
-    output = model(batch[0].float(), batch[1], batch[2])
+try:
+    # validation is large, so we do batches
+    for i in tqdm(iter(validation_loader)):
+        batch = [j.to(DEVICE) for j in i]
+        output = model(batch[0].float(), batch[1], batch[2])
 
-    # append to talley
-    logits = np.append(logits, output["logits"].detach().cpu().numpy(), 0)
-    labels = np.append(labels, i[2].numpy(), 0)
+        # append to talley
+        logits = np.append(logits, output["logits"].detach().cpu().numpy(), 0)
+        labels = np.append(labels, i[2].numpy(), 0)
 
-    torch.cuda.empty_cache()
+        if TASK == "future":
+            # current targets used to generate comparative graph
+            current_target = F.one_hot((i[0][:,-1]*30).to(int))
+            current_targets = np.append(current_targets, current_target, 0)
+
+        torch.cuda.empty_cache()
+except:
+    breakpoint()
 
 try:
     prec_recc, roc, cm, acc = tensor_metrics(logits, labels)
@@ -209,6 +236,22 @@ try:
              "val_confusion": cm,
              "val_roc": roc,
              "val_acc": acc})
+    if TASK == "future":
+        (prec_recc_c, roc_c, cm_c, acc_c), (prec_recc_uc, roc_uc, cm_uc, acc_uc) = future_metrics(logits, labels,
+                                                                                                  current_targets)
+
+        run.log({"val_prec_recc_changed": prec_recc_c,
+                 "val_confusion_changed": cm_c,
+                 "val_roc_changed": roc_c,
+                 "val_acc_changed": acc_c})
+
+        run.log({"val_prec_recc_unchanged": prec_recc_uc,
+                 "val_confusion_unchanged": cm_uc,
+                 "val_roc_unchanged": roc_uc,
+                 "val_acc_unchanged": acc_uc})
+
+
+
     # model.train()
 except ValueError:
     breakpoint()
