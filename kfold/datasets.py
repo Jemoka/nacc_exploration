@@ -247,6 +247,8 @@ class NACCFutureDataset(Dataset):
 
         # again drop the columns that are irrelavent to us (i.e. those without future results)
         data = data[next_measurement_applicable]
+        degressed = data.current_target > data.future_target
+        data = data[~degressed]
         progressed = data.current_target < data.future_target
 
         #### TARGET BALANCING ####
