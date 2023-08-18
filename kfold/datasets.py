@@ -247,21 +247,27 @@ class NACCFutureDataset(Dataset):
 
         # again drop the columns that are irrelavent to us (i.e. those without future results)
         data = data[next_measurement_applicable]
+        progressed = data.current_target < data.future_target
 
         #### TARGET BALANCING ####
-        # crop the data to ensure balanced classes
+        # crop the data to ensure balanced classes for whether or not progressed
         # TODO better dataaug that could exist?
         # we crop by future target, because that ensures
         # that results in more balanced classes for current
         # target even if we are nox explicitly balancing it
-        min_class = min(data.current_target.value_counts())
+        min_class = min(progressed.value_counts())
 
-        data = pd.concat([data[data.current_target==0].sample(n=min_class,
-                                                              random_state=7),
-                          data[data.current_target==1].sample(n=min_class,
-                                                              random_state=7),
-                          data[data.current_target==2].sample(n=min_class,
-                                                              random_state=7)]).sample(frac=1, random_state=7)
+        data = pd.concat([data[progressed].sample(n=min_class,
+                                                   random_state=7),
+                          data[~progressed].sample(n=min_class,
+                                                   random_state=7)]).sample(frac=1, random_state=7)
+
+        # data = pd.concat([data[data.current_target==0].sample(n=min_class,
+        #                                                       random_state=7),
+        #                   data[data.current_target==1].sample(n=min_class,
+        #                                                       random_state=7),
+        #                   data[data.current_target==2].sample(n=min_class,
+        #                                                       random_state=7)]).sample(frac=1, random_state=7)
 
 
         #### TRAIN_VAL SPLIT ####
