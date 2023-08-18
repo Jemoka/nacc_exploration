@@ -224,7 +224,7 @@ try:
 
         if TASK == "future":
             # current targets used to generate comparative graph
-            current_target = F.one_hot((i[0][:,-1]*30).to(int))
+            current_target = F.one_hot((i[0][:,-1]*30).to(int), num_classes=3)
             current_targets = np.append(current_targets, current_target, 0)
 
         torch.cuda.empty_cache()
