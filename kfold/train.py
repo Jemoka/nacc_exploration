@@ -260,6 +260,6 @@ except ValueError:
 # Saving
 print("Saving model...")
 os.mkdir(f"./models/{run.name}")
-torch.save(model, f"./models/{run.name}/model.save")
+torch.save(model.state_dict(), f"./models/{run.name}/model.save")
 torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
