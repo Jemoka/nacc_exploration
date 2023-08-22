@@ -126,6 +126,8 @@ class NACCCurrentDataset(Dataset):
         self.data = data[data.NACCID.isin(train_participants)][features+["DUMMY"]]
         self.targets = data[data.NACCID.isin(train_participants)].current_target
 
+        self.features = features+["DUMMY"]
+
     def __process(self, data, target, index=None):
         # the discussed dataprep
         # if a data entry is <0 or >80, it is "not found"
@@ -135,6 +137,8 @@ class NACCCurrentDataset(Dataset):
         data[data_found] = 0
         # then, the found-ness becomes a mask
         data_found_mask = data_found
+        # don't attend to dummy 
+        data_found_mask[-1] = True
 
         # if it is a sample with no tangible data
         # well give up and get another sample:
@@ -357,9 +361,9 @@ class NACCFutureDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-# d = NACCFutureDataset("../investigator_nacc57.csv",
-#                       "../features/combined")
-# d[0]
+# d = NACCCurrentDataset("../investigator_nacc57.csv",
+#                        "../features/combined")
+# d[123][0][d[123][1]]
 # d.val()
 # len(d)
 # # len(d)
