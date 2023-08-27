@@ -105,7 +105,7 @@ class NACCCurrentDataset(Dataset):
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
         # split participants for indexing
-        participants = list(set(data.NACCID.tolist()))
+        participants = list(sorted(set(data.NACCID.tolist())))
         splits = kf.split(participants)
         train_ids, test_ids = list(splits)[fold]
         train_participants = [participants[i] for i in train_ids]
@@ -280,7 +280,7 @@ class NACCFutureDataset(Dataset):
         kf = KFold(n_splits=10, shuffle=True, random_state=7)
 
         # split participants for indexing
-        participants = list(set(data.NACCID.tolist()))
+        participants = list(sorted(set(data.NACCID.tolist())))
         splits = kf.split(participants)
         train_ids, test_ids = list(splits)[fold]
         train_participants = [participants[i] for i in train_ids]
