@@ -64,7 +64,7 @@ class NACCCurrentDataset(Dataset):
         # get the fature variables
         with open(feature_path, 'r') as f:
             lines = f.readlines()
-            features = list(set([i.strip() for i in lines]))
+            features = list(sorted(set([i.strip() for i in lines])))
 
         #### CURRENT PREDICTION TARGETS ####
         # construct the artificial target 
@@ -218,7 +218,7 @@ class NACCFutureDataset(Dataset):
         # get the fature variables
         with open(feature_path, 'r') as f:
             lines = f.readlines()
-            features = list(set([i.strip() for i in lines]))
+            features = list(sorted(set([i.strip() for i in lines])))
 
         #### CURRENT PREDICTION TARGETS ####
         # construct the artificial target 
