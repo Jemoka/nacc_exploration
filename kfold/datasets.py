@@ -309,6 +309,8 @@ class NACCFutureDataset(Dataset):
         data[data_found] = 0
         # then, the found-ness becomes a mask
         data_found_mask = data_found
+        # don't attend to current target 
+        data_found_mask[-1] = True
 
         # if it is a sample with no tangible data
         # well give up and get another sample:
