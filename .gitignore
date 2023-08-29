@@ -15,3 +15,4 @@ wandb
 /testing/#transformer_validate.py#
 /testing/.DS_Store
 *.pyc
+/attention_analysis_data.bin
