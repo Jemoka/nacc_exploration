@@ -66,7 +66,7 @@ with open("../../attention_analysis_data_bal.bin", 'rb') as df:
 train_data = TensorDataset(data["train"][0], data["train"][1])
 test_data = TensorDataset(data["test"][0], data["test"][1])
 
-train_loader = iter(DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True))
+train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = iter(DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True))
 
 val_batch = next(test_loader)
@@ -79,7 +79,7 @@ optimizer = AdamW(model.parameters(), lr=LR)
 for e in range(EPOCHS):
     print(f"Training {e+1}/{EPOCHS}...")
 
-    for i, batch in enumerate(tqdm(train_loader, total=len(train_loader))):
+    for i, batch in enumerate(tqdm(iter(train_loader), total=len(train_loader))):
         inp = [i.to(DEVICE) for i in batch]
         output = model(*inp)
 
@@ -120,5 +120,4 @@ model.eval()
 os.mkdir(f"./models/{run.name}")
 torch.save(model.state_dict(), f"./models/{run.name}/model.save")
 torch.save(optimizer, f"./models/{run.name}/optimizer.save")
-
 
