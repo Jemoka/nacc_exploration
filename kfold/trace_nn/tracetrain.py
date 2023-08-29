@@ -38,14 +38,14 @@ import random
 from tracemodel import TraceModel
 
 CONFIG = {
-    "batch_size": 8,
+    "batch_size": 32,
     "lr": 0.0001,
     "epochs": 128,
-    "hidden": 1024,
+    "hidden": 256,
 }
 
 ONLINE = False
-# ONLINE = True
+ONLINE = True
 
 run = wandb.init(project="nacc-accuracy", entity="jemoka", config=CONFIG, mode=("online" if ONLINE else "disabled"))
 

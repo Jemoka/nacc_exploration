@@ -44,15 +44,15 @@ CONFIG = {
     "fold": 0,
     # "featureset": "neuralpsych-v2",
     "featureset": "combined",
-    # "task": "future",
-    "task": "current",
-    # "base": "dry-star-164"
-    "base": None, 
-    "batch_size": 32,
-    "lr": 0.0001,
-    # "batch_size": 8,
-    # "lr": 0.00005,
-    "epochs": 64,
+    "task": "future",
+    # "task": "current",
+    "base": "efficient-dragon-18",
+    # "base": None, 
+    # "batch_size": 32,
+    # "lr": 0.0001,
+    "batch_size": 8,
+    "lr": 0.00005,
+    "epochs": 55,
 
     "nlayers": 3,
     "hidden": 128,
@@ -100,10 +100,8 @@ dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 if not MODEL:
     model = NACCModel(dataset._num_features, 3, nlayers=config.nlayers, hidden=config.hidden).to(DEVICE)
 else:
-    # load model
-    model = torch.load(os.path.join("models", MODEL, "model.save"),
-                       map_location=DEVICE).to(DEVICE)
-
+    model = NACCModel(dataset._num_features, 3, nlayers=config.nlayers, hidden=config.hidden).to(DEVICE)
+    model.load_state_dict(torch.load(os.path.join(f"./models/{MODEL}", "model.save"), map_location=DEVICE))
 
 optimizer = AdamW(model.parameters(), lr=LR, weight_decay=1e-5)
 # scheduler = StepLR(optimizer, step_size=8, gamma=0.75)
@@ -263,3 +261,4 @@ os.mkdir(f"./models/{run.name}")
 torch.save(model.state_dict(), f"./models/{run.name}/model.save")
 torch.save(optimizer, f"./models/{run.name}/optimizer.save")
 
+breakpoint()
