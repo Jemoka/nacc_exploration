@@ -38,8 +38,8 @@ import random
 from tracemodel import TraceModel
 
 CONFIG = {
-    "batch_size": 4,
-    "lr": 0.001,
+    "batch_size": 8,
+    "lr": 0.0001,
     "epochs": 128,
     "hidden": 1024,
 }
