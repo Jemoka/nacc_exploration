@@ -40,7 +40,7 @@ from tracemodel import TraceModel
 CONFIG = {
     "batch_size": 32,
     "lr": 0.001,
-    "epochs": 0,
+    "epochs": 64,
     "hidden": 128,
 }
 
