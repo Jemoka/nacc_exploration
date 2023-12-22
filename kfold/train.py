@@ -47,7 +47,7 @@ CONFIG = {
     # "task": "future",
     "task": "current",
     # "base": "efficient-dragon-18",
-    # "base": None, 
+    "base": None, 
     "batch_size": 32,
     "lr": 0.0001,
     # "batch_size": 8,
