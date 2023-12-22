@@ -56,6 +56,8 @@ CONFIG = {
 
     "nlayers": 3,
     "hidden": 128,
+
+    "dont_mask": True
 }
 
 

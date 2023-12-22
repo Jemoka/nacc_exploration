@@ -129,16 +129,24 @@ class NACCCurrentDataset(Dataset):
         self.features = features+["DUMMY"]
 
     def __process(self, data, target, index=None):
-        # the discussed dataprep
-        # if a data entry is <0 or >80, it is "not found"
-        # so, we encode those values as 0 in the FEATURE
-        # column, and encode another feature of "not-found"ness
-        data_found = (data > 80) | (data < 0)
-        data[data_found] = 0
-        # then, the found-ness becomes a mask
-        data_found_mask = data_found
-        # don't attend to dummy 
-        data_found_mask[-1] = True
+        # as a test, we report results without masking
+        if False:
+            # the discussed dataprep
+            # if a data entry is <0 or >80, it is "not found"
+            # so, we encode those values as 0 in the FEATURE
+            # column, and encode another feature of "not-found"ness
+            data_found = (data > 80) | (data < 0)
+            data[data_found] = 0
+            # then, the found-ness becomes a mask
+            data_found_mask = data_found
+            # don't attend to dummy 
+            data_found_mask[-1] = True
+        else:
+            # make everything found
+            data_found = (data > 70000) | (data < 70000)
+            data_found_mask = data_found
+            # don't attend to dummy 
+            data_found_mask[-1] = True
 
         # if it is a sample with no tangible data
         # well give up and get another sample:
