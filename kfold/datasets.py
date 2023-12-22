@@ -143,7 +143,7 @@ class NACCCurrentDataset(Dataset):
             data_found_mask[-1] = True
         else:
             # make everything found
-            data_found = (data > 70000) | (data < 70000)
+            data_found = (data > 70000) | (data < -70000)
             data_found_mask = data_found
             # don't attend to dummy 
             data_found_mask[-1] = True
