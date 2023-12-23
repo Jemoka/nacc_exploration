@@ -89,7 +89,7 @@ MISSING_PCT = config.missing_pct
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device('cpu')
 
 if TASK == "current":
-    dataset = NACCCurrentDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD, missing_pct=MISSING_PCT)
+    dataset = NACCCurrentDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD, percentage_cover=MISSING_PCT)
     config.truly_missing = dataset.missing
 elif TASK == "future":
     dataset = NACCFutureDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD)
