@@ -42,7 +42,7 @@ class NACCCurrentDataset(Dataset):
 
     def __init__(self, data_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_indicies=[1,3,4], fold=0, percentage_cover=0.7):
+                 target_indicies=[1,3,4], fold=0, percentage_cover=1):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -52,6 +52,7 @@ class NACCCurrentDataset(Dataset):
         [target_indicies] ([int]): how to translate the output key values
                                    to the indicies of an array
         [fold] (int): the n-th fold to select
+        
         """
 
         # initialize superclass
@@ -133,14 +134,17 @@ class NACCCurrentDataset(Dataset):
         already_missing = sum(count_missing)/num_cells
         to_destroy = max(percentage_cover - already_missing, 0)
 
-        # destroy a percentage of training data based on to_destroy
-        self.data[(np.random.random(self.data.shape) < to_destroy) & ~missing_data] = -1
+        while already_missing < percentage_cover:
+            # destroy a percentage of training data based on to_destroy
+            self.data[(np.random.random(self.data.shape) < to_destroy) & ~missing_data] = -1
 
-        # recalculate true missing percentage
-        nmissing_data = (self.data > 80) | (self.data < 0)
-        nnum_cells = (self.data.shape[0]*self.data.shape[1])
-        ncount_missing = nmissing_data[nmissing_data==True].count()
-        self.missing = sum(ncount_missing)/nnum_cells
+            # recalculate true missing percentage
+            missing_data = (self.data > 80) | (self.data < 0)
+            num_cells = (self.data.shape[0]*self.data.shape[1])
+            count_missing = missing_data[missing_data==True].count()
+            already_missing = sum(count_missing)/num_cells
+
+        self.missing = already_missing
 
         self.features = features+["DUMMY"]
 
