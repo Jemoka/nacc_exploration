@@ -42,7 +42,7 @@ class NACCCurrentDataset(Dataset):
 
     def __init__(self, data_path, feature_path,
               # skipping 2 impaired because of labeling inconsistency
-                 target_indicies=[1,3,4], fold=0):
+                 target_indicies=[1,3,4], fold=0, percentage_cover=0.7):
         """The NeuralPsycology Dataset
 
         Arguments:
@@ -126,27 +126,35 @@ class NACCCurrentDataset(Dataset):
         self.data = data[data.NACCID.isin(train_participants)][features+["DUMMY"]]
         self.targets = data[data.NACCID.isin(train_participants)].current_target
 
+        # compute the percentage of cells missing value
+        missing_data = (self.data > 80) | (self.data < 0)
+        num_cells = (self.data.shape[0]*self.data.shape[1])
+        count_missing = missing_data[missing_data==True].count()
+        already_missing = sum(count_missing)/num_cells
+        to_destroy = max(percentage_cover - already_missing, 0)
+
+        # destroy a percentage of training data based on to_destroy
+        self.data[(np.random.random(self.data.shape) < to_destroy) & ~missing_data] = -1
+
+        # recalculate true missing percentage
+        nmissing_data = (self.data > 80) | (self.data < 0)
+        nnum_cells = (self.data.shape[0]*self.data.shape[1])
+        ncount_missing = nmissing_data[nmissing_data==True].count()
+        self.missing = sum(ncount_missing)/nnum_cells
+
         self.features = features+["DUMMY"]
 
     def __process(self, data, target, index=None):
         # as a test, we report results without masking
-        if False:
-            # the discussed dataprep
-            # if a data entry is <0 or >80, it is "not found"
-            # so, we encode those values as 0 in the FEATURE
-            # column, and encode another feature of "not-found"ness
-            data_found = (data > 80) | (data < 0)
-            data[data_found] = 0
-            # then, the found-ness becomes a mask
-            data_found_mask = data_found
-            # don't attend to dummy 
-            data_found_mask[-1] = True
-        else:
-            # make everything found
-            data_found = (data > 70000) | (data < -70000)
-            data_found_mask = data_found
-            # don't attend to dummy 
-            data_found_mask[-1] = True
+        # if a data entry is <0 or >80, it is "not found"
+        # so, we encode those values as 0 in the FEATURE
+        # column, and encode another feature of "not-found"ness
+        data_found = (data > 80) | (data < 0)
+        data[data_found] = 0
+        # then, the found-ness becomes a mask
+        data_found_mask = data_found
+        # don't attend to dummy 
+        data_found_mask[-1] = True
 
         # if it is a sample with no tangible data
         # well give up and get another sample:

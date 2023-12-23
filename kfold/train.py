@@ -57,7 +57,7 @@ CONFIG = {
     "nlayers": 3,
     "hidden": 128,
 
-    "dont_mask": True
+    "missing_pct": 0.0
 }
 
 
@@ -83,11 +83,14 @@ FOLD = config.fold
 FEATURESET = config.featureset
 MODEL = config.base
 
+MISSING_PCT = config.missing_pct
+
 # initialize the device
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device('cpu')
 
 if TASK == "current":
-    dataset = NACCCurrentDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD)
+    dataset = NACCCurrentDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD, missing_pct=MISSING_PCT)
+    config.truly_missing = dataset.missing
 elif TASK == "future":
     dataset = NACCFutureDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD)
 else:
