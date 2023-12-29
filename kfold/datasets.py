@@ -128,6 +128,25 @@ class NACCCurrentDataset(Dataset):
         self.targets = data[data.NACCID.isin(train_participants)].current_target
 
         # compute the percentage of cells missing value
+        missing_data = (self.val_data > 80) | (self.val_data < 0)
+        num_cells = (self.val_data.shape[0]*self.val_data.shape[1])
+        count_missing = missing_data[missing_data==True].count()
+        already_missing = sum(count_missing)/num_cells
+        to_destroy = max(percentage_cover - already_missing, 0)
+
+        while already_missing < percentage_cover:
+            # destroy a percentage of training data based on to_destroy
+            self.val_data[(np.random.random(self.val_data.shape) < to_destroy) & ~missing_data] = -1
+
+            # recalculate true missing percentage
+            missing_data = (self.val_data > 80) | (self.val_data < 0)
+            num_cells = (self.val_data.shape[0]*self.val_data.shape[1])
+            count_missing = missing_data[missing_data==True].count()
+            already_missing = sum(count_missing)/num_cells
+
+        self.val_missing = already_missing
+
+        # compute the percentage of cells missing value
         missing_data = (self.data > 80) | (self.data < 0)
         num_cells = (self.data.shape[0]*self.data.shape[1])
         count_missing = missing_data[missing_data==True].count()

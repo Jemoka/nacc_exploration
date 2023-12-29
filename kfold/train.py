@@ -91,6 +91,7 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device("mp
 if TASK == "current":
     dataset = NACCCurrentDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD, percentage_cover=MISSING_PCT)
     config.truly_missing = dataset.missing
+    config.truly_missing_val = dataset.val_missing
 elif TASK == "future":
     dataset = NACCFutureDataset("../investigator_nacc57.csv", f"../features/{FEATURESET}", fold=FOLD)
 else:
